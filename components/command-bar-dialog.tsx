@@ -26,8 +26,12 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
   const [error, setError] = React.useState<string | null>(null)
   const [showPinModal, setShowPinModal] = React.useState(false)
   const [pendingCommand, setPendingCommand] = React.useState("")
-  const [tabIndex, setTabIndex] = React.useState(0)
-  const [lastPartial, setLastPartial] = React.useState("")
+  const [tabState, setTabState] = React.useState<{
+    dirSegments: string[]
+    partial: string
+    cmd: string
+    index: number
+  } | null>(null)
 
   React.useEffect(() => {
     if (open) {
@@ -35,22 +39,37 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
       setError(null)
       setShowPinModal(false)
       setPendingCommand("")
-      setTabIndex(0)
-      setLastPartial("")
+      setTabState(null)
     }
   }, [open])
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Tab") {
       e.preventDefault()
+
       const parts = inputVal.trim().split(/\s+/)
       const cmd = parts[0] || "touch"
       const pathStr = parts.slice(1).join(" ") || ""
 
       const endsWithSlash = pathStr.endsWith("/")
       const rawSegments = pathStr.split("/").map((s) => s.trim())
-      const partial = endsWithSlash ? "" : (rawSegments.pop() || "")
-      const dirSegments = rawSegments.filter(Boolean)
+
+      let dirSegments: string[] = []
+      let partial = ""
+
+      if (tabState) {
+        // Reuse ongoing tab session context
+        dirSegments = tabState.dirSegments
+        partial = tabState.partial
+      } else {
+        if (endsWithSlash) {
+          dirSegments = rawSegments.filter(Boolean)
+          partial = ""
+        } else {
+          partial = rawSegments.pop() || ""
+          dirSegments = rawSegments.filter(Boolean)
+        }
+      }
 
       let currentNodes = arvore
       let valid = true
@@ -67,13 +86,18 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
       if (valid) {
         const matches = currentNodes.filter((n) => n.nome.toLowerCase().startsWith(partial.toLowerCase()))
         if (matches.length > 0) {
-          const nextIndex = partial === lastPartial ? (tabIndex + 1) % matches.length : 0
-          setTabIndex(nextIndex)
-          setLastPartial(partial)
-
+          const nextIndex = tabState ? (tabState.index + 1) % matches.length : 0
           const match = matches[nextIndex]
           const completedSegments = [...dirSegments, match.nome]
-          setInputVal(`${cmd} ${completedSegments.join("/")}${match.tipo === "PASTA" ? "/" : ""}`)
+          const newVal = `${cmd} ${completedSegments.join("/")}${match.tipo === "PASTA" ? "/" : ""}`
+
+          setInputVal(newVal)
+          setTabState({
+            dirSegments,
+            partial,
+            cmd,
+            index: nextIndex,
+          })
         }
       }
     }
@@ -127,6 +151,7 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
                 value={inputVal}
                 onChange={(e) => {
                   setInputVal(e.target.value)
+                  setTabState(null)
                   if (error) setError(null)
                 }}
                 onKeyDown={handleKeyDown}
@@ -143,7 +168,7 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
             )}
 
             <div className="flex justify-between items-center px-1 text-[11px] text-muted-foreground font-mono">
-              <span>Tab para autocompletar (pressione repetidamente para ciclar)</span>
+              <span>Tab para autocompletar e ciclar entre opções</span>
               <span>Pressione Enter para executar</span>
             </div>
           </form>
