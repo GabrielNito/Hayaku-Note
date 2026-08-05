@@ -91,6 +91,26 @@ export const ResizableImage = Image.extend({
     }
   },
 
+  addStorage() {
+    return {
+      ...this.parent?.(),
+      markdown: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        serialize(state: any, node: any) {
+          const src = node.attrs.src
+          const alt = node.attrs.alt || ""
+          const width = node.attrs.width
+          if (width) {
+            state.write(`<img src="${src}" alt="${alt}" width="${width}" />`)
+          } else {
+            state.write(`![${alt}](${src})`)
+          }
+        },
+        parse: {},
+      },
+    }
+  },
+
   addNodeView() {
     return ReactNodeViewRenderer(ImageComponent)
   },
