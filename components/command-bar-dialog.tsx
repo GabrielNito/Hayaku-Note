@@ -26,6 +26,8 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
   const [error, setError] = React.useState<string | null>(null)
   const [showPinModal, setShowPinModal] = React.useState(false)
   const [pendingCommand, setPendingCommand] = React.useState("")
+  const [tabIndex, setTabIndex] = React.useState(0)
+  const [lastPartial, setLastPartial] = React.useState("")
 
   React.useEffect(() => {
     if (open) {
@@ -33,6 +35,8 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
       setError(null)
       setShowPinModal(false)
       setPendingCommand("")
+      setTabIndex(0)
+      setLastPartial("")
     }
   }, [open])
 
@@ -40,13 +44,13 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
     if (e.key === "Tab") {
       e.preventDefault()
       const parts = inputVal.trim().split(/\s+/)
-      if (parts.length < 2) return
-      const cmd = parts[0]
-      const pathStr = parts.slice(1).join(" ")
+      const cmd = parts[0] || "touch"
+      const pathStr = parts.slice(1).join(" ") || ""
 
-      const segments = pathStr.split("/")
-      const partial = segments.pop() || ""
-      const dirSegments = segments
+      const endsWithSlash = pathStr.endsWith("/")
+      const rawSegments = pathStr.split("/").map((s) => s.trim())
+      const partial = endsWithSlash ? "" : (rawSegments.pop() || "")
+      const dirSegments = rawSegments.filter(Boolean)
 
       let currentNodes = arvore
       let valid = true
@@ -61,10 +65,15 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
       }
 
       if (valid) {
-        const match = currentNodes.find((n) => n.nome.toLowerCase().startsWith(partial.toLowerCase()))
-        if (match) {
+        const matches = currentNodes.filter((n) => n.nome.toLowerCase().startsWith(partial.toLowerCase()))
+        if (matches.length > 0) {
+          const nextIndex = partial === lastPartial ? (tabIndex + 1) % matches.length : 0
+          setTabIndex(nextIndex)
+          setLastPartial(partial)
+
+          const match = matches[nextIndex]
           const completedSegments = [...dirSegments, match.nome]
-          setInputVal(`${cmd} ${completedSegments.join("/")}`)
+          setInputVal(`${cmd} ${completedSegments.join("/")}${match.tipo === "PASTA" ? "/" : ""}`)
         }
       }
     }
@@ -134,7 +143,7 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
             )}
 
             <div className="flex justify-between items-center px-1 text-[11px] text-muted-foreground font-mono">
-              <span>Tab para autocompletar</span>
+              <span>Tab para autocompletar (pressione repetidamente para ciclar)</span>
               <span>Pressione Enter para executar</span>
             </div>
           </form>
