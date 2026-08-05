@@ -264,7 +264,7 @@ export async function salvarConteudo(
 export async function executarComandoCli(
   pin: string,
   commandLine: string
-): Promise<{ success: boolean; error?: string; id?: string; tipo?: string }> {
+): Promise<{ success: boolean; error?: string; id?: string; tipo?: string; deletedId?: string }> {
   const isValid = await validarPin(pin)
   if (!isValid) {
     return { success: false, error: "PIN incorreto." }
@@ -338,7 +338,7 @@ export async function executarComandoCli(
         })
 
         revalidatePath("/")
-        return { success: true }
+        return { success: true, deletedId: targetNode.id }
       }
       return { success: false, error: "Nó não encontrado para remoção." }
     }

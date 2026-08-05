@@ -132,6 +132,11 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
     router.refresh()
     if (res.id && res.tipo === "ARQUIVO") {
       router.push(`/n/${res.id}`)
+    } else if (res.deletedId) {
+      const currentPath = window.location.pathname
+      if (currentPath.includes(`/n/${res.deletedId}`)) {
+        router.push("/")
+      }
     }
   }
 
