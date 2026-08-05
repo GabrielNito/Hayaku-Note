@@ -260,3 +260,138 @@ export async function salvarConteudo(
     return { success: false, error: "Erro ao salvar conteúdo no banco de dados." }
   }
 }
+
+export async function executarComandoCli(
+  pin: string,
+  commandLine: string
+): Promise<{ success: boolean; error?: string; id?: string }> {
+  const isValid = await validarPin(pin)
+  if (!isValid) {
+    return { success: false, error: "PIN incorreto." }
+  }
+
+  const parts = commandLine.trim().split(/\s+/)
+  const cmd = parts[0]?.toLowerCase()
+  const rawPath = parts.slice(1).join(" ").trim()
+
+  if (!cmd || !rawPath) {
+    return { success: false, error: "Comando inválido. Use: touch, mkdir ou rm seguido do caminho." }
+  }
+
+  if (cmd !== "touch" && cmd !== "mkdir" && cmd !== "rm") {
+    return { success: false, error: `Comando desconhecido: "${cmd}". Use touch, mkdir ou rm.` }
+  }
+
+  const segments = rawPath.split("/").map((s) => s.trim()).filter(Boolean)
+  if (segments.length === 0) {
+    return { success: false, error: "Caminho inválido." }
+  }
+
+  try {
+    if (cmd === "rm") {
+      let currentPaiId: string | null = null
+      let targetNode: { id: string } | null = null
+
+      for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i]
+        const node: { id: string; nome: string; tipo: string; paiId: string | null } | null = await prisma.no.findFirst({
+          where: {
+            nome: seg,
+            paiId: currentPaiId,
+          },
+        })
+        if (!node) {
+          return { success: false, error: `Caminho não encontrado: "${rawPath}"` }
+        }
+        if (i === segments.length - 1) {
+          targetNode = node
+        } else {
+          currentPaiId = node.id
+        }
+      }
+
+      if (targetNode) {
+        // Delete recursively including associated files in UploadThing
+        async function deletarArquivosRecursivos(noId: string) {
+          const no = await prisma.no.findUnique({
+            where: { id: noId },
+            select: { conteudo: true },
+          })
+          if (no && no.conteudo) {
+            const keys = extractUploadThingKeys(no.conteudo)
+            if (keys.length > 0) {
+              await utapi.deleteFiles(keys).catch(() => {})
+            }
+          }
+          const filhos = await prisma.no.findMany({
+            where: { paiId: noId },
+            select: { id: true },
+          })
+          for (const filho of filhos) {
+            await deletarArquivosRecursivos(filho.id)
+          }
+        }
+
+        await deletarArquivosRecursivos(targetNode.id)
+        await prisma.no.delete({
+          where: { id: targetNode.id },
+        })
+
+        revalidatePath("/")
+        return { success: true }
+      }
+      return { success: false, error: "Nó não encontrado para remoção." }
+    }
+
+    let currentPaiId: string | null = null
+    const targetTipo = cmd === "touch" ? "ARQUIVO" : "PASTA"
+
+    for (let i = 0; i < segments.length; i++) {
+      const seg = segments[i]
+      const isLast = i === segments.length - 1
+
+      let node: { id: string; nome: string; tipo: string; paiId: string | null } | null = await prisma.no.findFirst({
+        where: {
+          nome: seg,
+          paiId: currentPaiId,
+        },
+      })
+
+      if (!node) {
+        const maxOrdem: { ordem: number } | null = await prisma.no.findFirst({
+          where: { paiId: currentPaiId },
+          orderBy: { ordem: "desc" },
+          select: { ordem: true },
+        })
+        const novaOrdem: number = (maxOrdem?.ordem ?? -1) + 1
+
+        const tipoNo: string = isLast ? targetTipo : "PASTA"
+        node = await prisma.no.create({
+          data: {
+            nome: seg,
+            tipo: tipoNo,
+            paiId: currentPaiId,
+            conteudo: tipoNo === "ARQUIVO" ? "" : null,
+            ordem: novaOrdem,
+          },
+        })
+      } else {
+        if (isLast && node.tipo !== targetTipo) {
+          return { success: false, error: `Já existe um nó do tipo "${node.tipo}" com o nome "${seg}".` }
+        }
+      }
+
+      if (isLast) {
+        revalidatePath("/")
+        return { success: true, id: node.id }
+      }
+
+      currentPaiId = node.id
+    }
+
+    return { success: false, error: "Erro ao processar caminho." }
+  } catch (err) {
+    console.error("Erro ao executar comando CLI:", err)
+    return { success: false, error: "Erro ao executar comando no banco de dados." }
+  }
+}
