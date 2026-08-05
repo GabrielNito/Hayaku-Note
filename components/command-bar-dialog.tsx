@@ -97,7 +97,7 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
 
     onOpenChange(false)
     router.refresh()
-    if (res.id) {
+    if (res.id && res.tipo === "ARQUIVO") {
       router.push(`/n/${res.id}`)
     }
   }

@@ -264,7 +264,7 @@ export async function salvarConteudo(
 export async function executarComandoCli(
   pin: string,
   commandLine: string
-): Promise<{ success: boolean; error?: string; id?: string }> {
+): Promise<{ success: boolean; error?: string; id?: string; tipo?: string }> {
   const isValid = await validarPin(pin)
   if (!isValid) {
     return { success: false, error: "PIN incorreto." }
@@ -383,7 +383,7 @@ export async function executarComandoCli(
 
       if (isLast) {
         revalidatePath("/")
-        return { success: true, id: node.id }
+        return { success: true, id: node.id, tipo: node.tipo }
       }
 
       currentPaiId = node.id
