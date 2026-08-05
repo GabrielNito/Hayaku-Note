@@ -1,24 +1,68 @@
 "use client"
 
 import * as React from "react"
-import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes"
 
-function ThemeProvider({
+type Theme = "dark" | "light" | "system"
+
+interface ThemeContextType {
+  theme: Theme
+  setTheme: (theme: Theme) => void
+  resolvedTheme: "dark" | "light"
+}
+
+const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined)
+
+export function ThemeProvider({
   children,
-  ...props
-}: React.ComponentProps<typeof NextThemesProvider>) {
+}: {
+  children: React.ReactNode
+  attribute?: string
+  defaultTheme?: string
+  enableSystem?: boolean
+  disableTransitionOnChange?: boolean
+}) {
+  const [theme, setThemeState] = React.useState<Theme>("system")
+  const [resolvedTheme, setResolvedTheme] = React.useState<"dark" | "light">("light")
+
+  React.useEffect(() => {
+    const saved = localStorage.getItem("theme") as Theme | null
+    if (saved) {
+      setThemeState(saved)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    const root = document.documentElement
+    root.classList.remove("light", "dark")
+
+    let effectiveTheme = theme
+    if (theme === "system") {
+      effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+    }
+
+    setResolvedTheme(effectiveTheme as "dark" | "light")
+    root.classList.add(effectiveTheme)
+  }, [theme])
+
+  const setTheme = React.useCallback((newTheme: Theme) => {
+    setThemeState(newTheme)
+    localStorage.setItem("theme", newTheme)
+  }, [])
+
   return (
-    <NextThemesProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-      {...props}
-    >
+    <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
       <ThemeHotkey />
       {children}
-    </NextThemesProvider>
+    </ThemeContext.Provider>
   )
+}
+
+export function useTheme() {
+  const context = React.useContext(ThemeContext)
+  if (!context) {
+    throw new Error("useTheme must be used within a ThemeProvider")
+  }
+  return context
 }
 
 function isTypingTarget(target: EventTarget | null) {
@@ -67,5 +111,3 @@ function ThemeHotkey() {
 
   return null
 }
-
-export { ThemeProvider }

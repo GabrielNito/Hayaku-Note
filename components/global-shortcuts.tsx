@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/components/theme-provider"
 import { QuickOpenDialog } from "@/components/quick-open-dialog"
 import { CommandBarDialog } from "@/components/command-bar-dialog"
 import { NoItem } from "@/actions/types"

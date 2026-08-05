@@ -12,7 +12,7 @@ import {
   FolderPlus,
   FilePlus,
 } from "lucide-react"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/components/theme-provider"
 import { criarNo, renomearNo, deletarNo } from "@/actions/no"
 import { NoItem, TipoNo } from "@/actions/types"
 import { PinDialog } from "@/components/pin-dialog"
