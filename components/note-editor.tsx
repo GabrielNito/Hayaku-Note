@@ -184,13 +184,13 @@ export function NoteEditor({
       if (currentMd !== savedContent) {
         editor.commands.setContent(savedContent)
       }
-      editor.commands.focus("end")
+      editor.commands.focus("start")
     }
   }, [noId, savedContent, editor])
 
   React.useEffect(() => {
     if (editor) {
-      editor.commands.focus("end")
+      editor.commands.focus("start")
     }
   }, [editor])
 
