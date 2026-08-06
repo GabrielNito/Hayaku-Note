@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model No {
+  id           String   @id @default(cuid())
+  nome         String
+  tipo         String   // "PASTA" or "ARQUIVO"
+  conteudo     String?
+  ordem        Int      @default(0)
+
+  paiId        String?
+  pai          No?      @relation("Filhos", fields: [paiId], references: [id], onDelete: Cascade)
+  filhos       No[]     @relation("Filhos")
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([paiId])
+}
