@@ -360,6 +360,7 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
       <SidebarHeader className="p-3 border-b border-border/50">
         <div className="flex items-center justify-between mb-2">
           <Link href="/" className="font-semibold text-xs tracking-tight text-foreground flex items-center gap-1.5">
+            <img src="/icon.ico" alt="Logo" className="size-4 rounded-sm object-contain" />
             Hayaku Note
           </Link>
           <div className="flex items-center gap-1">
