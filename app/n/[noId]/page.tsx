@@ -4,11 +4,25 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 import { NoteEditor } from "@/components/note-editor"
 import { GlobalShortcuts } from "@/components/global-shortcuts"
 import { notFound } from "next/navigation"
+import type { Metadata } from "next"
 
 interface NotePageProps {
   params: Promise<{
     noId: string
   }>
+}
+
+export async function generateMetadata({ params }: NotePageProps): Promise<Metadata> {
+  const { noId } = await params
+  const no = await obterNo(noId)
+  if (!no) {
+    return {
+      title: "Hayaku Note",
+    }
+  }
+  return {
+    title: `${no.nome} — Hayaku Note`,
+  }
 }
 
 export default async function NotePage({ params }: NotePageProps) {

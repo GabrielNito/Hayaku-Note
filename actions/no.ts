@@ -275,17 +275,17 @@ export async function executarComandoCli(
   const rawPath = parts.slice(1).join(" ").trim()
 
   if (!cmd || !rawPath) {
-    return { success: false, error: "Comando inválido. Use: touch, mkdir, rm ou cp." }
+    return { success: false, error: "Comando inválido. Use: touch, mkdir, rm, cp ou mv." }
   }
 
-  if (cmd !== "touch" && cmd !== "mkdir" && cmd !== "rm" && cmd !== "cp") {
-    return { success: false, error: `Comando desconhecido: "${cmd}". Use touch, mkdir, rm ou cp.` }
+  if (cmd !== "touch" && cmd !== "mkdir" && cmd !== "rm" && cmd !== "cp" && cmd !== "mv") {
+    return { success: false, error: `Comando desconhecido: "${cmd}". Use touch, mkdir, rm, cp ou mv.` }
   }
 
-  if (cmd === "cp") {
+  if (cmd === "cp" || cmd === "mv") {
     const args = rawPath.split(/\s+/)
     if (args.length < 2) {
-      return { success: false, error: "Uso correto: cp <origem> <destino>" }
+      return { success: false, error: `Uso correto: ${cmd} <origem> <destino>` }
     }
     const srcPath = args[0]
     const destPath = args.slice(1).join(" ")
@@ -318,30 +318,74 @@ export async function executarComandoCli(
       return { success: false, error: "Caminho de destino inválido." }
     }
 
-    const newName = destSegments.pop()!
-    let destPaiId: string | null = null
-
-    for (const seg of destSegments) {
-      let folder: { id: string; nome: string; tipo: string; paiId: string | null } | null = await prisma.no.findFirst({
-        where: { nome: seg, paiId: destPaiId, tipo: "PASTA" },
+    let destFolder = null
+    let currentPai: string | null = null
+    for (let i = 0; i < destSegments.length; i++) {
+      const seg = destSegments[i]
+      const folder: { id: string; nome: string; tipo: string; paiId: string | null } | null = await prisma.no.findFirst({
+        where: { nome: seg, paiId: currentPai, tipo: "PASTA" },
       })
       if (!folder) {
-        const maxOrdem: { ordem: number } | null = await prisma.no.findFirst({
-          where: { paiId: destPaiId },
-          orderBy: { ordem: "desc" },
-          select: { ordem: true },
-        })
-        const novaOrdem: number = (maxOrdem?.ordem ?? -1) + 1
-        folder = await prisma.no.create({
-          data: {
-            nome: seg,
-            tipo: "PASTA",
-            paiId: destPaiId,
-            ordem: novaOrdem,
-          },
-        })
+        destFolder = null
+        break
       }
-      destPaiId = folder.id
+      currentPai = folder.id
+      if (i === destSegments.length - 1) {
+        destFolder = folder
+      }
+    }
+
+    let destPaiId: string | null = null
+    let newName: string
+
+    if (destFolder) {
+      destPaiId = destFolder.id
+      newName = sourceNode.nome
+    } else {
+      const tempSegments = [...destSegments]
+      newName = tempSegments.pop()!
+      let tempPaiId: string | null = null
+
+      for (const seg of tempSegments) {
+        let folder: { id: string; nome: string; tipo: string; paiId: string | null } | null = await prisma.no.findFirst({
+          where: { nome: seg, paiId: tempPaiId, tipo: "PASTA" },
+        })
+        if (!folder) {
+          const maxOrdem: { ordem: number } | null = await prisma.no.findFirst({
+            where: { paiId: tempPaiId },
+            orderBy: { ordem: "desc" },
+            select: { ordem: true },
+          })
+          const novaOrdem: number = (maxOrdem?.ordem ?? -1) + 1
+          folder = await prisma.no.create({
+            data: {
+              nome: seg,
+              tipo: "PASTA",
+              paiId: tempPaiId,
+              ordem: novaOrdem,
+            },
+          })
+        }
+        tempPaiId = folder.id
+      }
+      destPaiId = tempPaiId
+    }
+
+    if (cmd === "mv") {
+      if (sourceNode.id === destPaiId) {
+        return { success: false, error: "Não é possível mover um item para dentro de si mesmo." }
+      }
+
+      await prisma.no.update({
+        where: { id: sourceNode.id },
+        data: {
+          nome: newName,
+          paiId: destPaiId,
+        },
+      })
+
+      revalidatePath("/")
+      return { success: true, id: sourceNode.id, tipo: sourceNode.tipo }
     }
 
     async function copiarRecursivo(origemId: string, paiDestId: string | null, nomeOverride?: string) {

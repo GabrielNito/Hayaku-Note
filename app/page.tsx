@@ -5,6 +5,10 @@ import { redirect } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { GlobalShortcuts } from "@/components/global-shortcuts"
 
+export const metadata = {
+  title: "Hayaku Note",
+}
+
 export default async function HomePage() {
   const arvore = await obterArvore()
   const primeiroArquivo = await obterPrimeiroArquivo()
