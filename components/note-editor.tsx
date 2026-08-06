@@ -184,8 +184,15 @@ export function NoteEditor({
       if (currentMd !== savedContent) {
         editor.commands.setContent(savedContent)
       }
+      editor.commands.focus("end")
     }
   }, [noId, savedContent, editor])
+
+  React.useEffect(() => {
+    if (editor) {
+      editor.commands.focus("end")
+    }
+  }, [editor])
 
   // Global shortcuts for Save (Ctrl+S), Sidebar (Ctrl+Shift+B), and Bold (Ctrl+B)
   React.useEffect(() => {

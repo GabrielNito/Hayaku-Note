@@ -275,11 +275,115 @@ export async function executarComandoCli(
   const rawPath = parts.slice(1).join(" ").trim()
 
   if (!cmd || !rawPath) {
-    return { success: false, error: "Comando inválido. Use: touch, mkdir ou rm seguido do caminho." }
+    return { success: false, error: "Comando inválido. Use: touch, mkdir, rm ou cp." }
   }
 
-  if (cmd !== "touch" && cmd !== "mkdir" && cmd !== "rm") {
-    return { success: false, error: `Comando desconhecido: "${cmd}". Use touch, mkdir ou rm.` }
+  if (cmd !== "touch" && cmd !== "mkdir" && cmd !== "rm" && cmd !== "cp") {
+    return { success: false, error: `Comando desconhecido: "${cmd}". Use touch, mkdir, rm ou cp.` }
+  }
+
+  if (cmd === "cp") {
+    const args = rawPath.split(/\s+/)
+    if (args.length < 2) {
+      return { success: false, error: "Uso correto: cp <origem> <destino>" }
+    }
+    const srcPath = args[0]
+    const destPath = args.slice(1).join(" ")
+
+    const srcSegments = srcPath.split("/").map((s) => s.trim()).filter(Boolean)
+    let srcPaiId: string | null = null
+    let sourceNode: { id: string; nome: string; tipo: string; conteudo: string | null } | null = null
+
+    for (let i = 0; i < srcSegments.length; i++) {
+      const seg = srcSegments[i]
+      const node: { id: string; nome: string; tipo: string; paiId: string | null; conteudo: string | null } | null = await prisma.no.findFirst({
+        where: { nome: seg, paiId: srcPaiId },
+      })
+      if (!node) {
+        return { success: false, error: `Origem não encontrada: "${srcPath}"` }
+      }
+      if (i === srcSegments.length - 1) {
+        sourceNode = node
+      } else {
+        srcPaiId = node.id
+      }
+    }
+
+    if (!sourceNode) {
+      return { success: false, error: "Nó de origem inválido." }
+    }
+
+    const destSegments = destPath.split("/").map((s) => s.trim()).filter(Boolean)
+    if (destSegments.length === 0) {
+      return { success: false, error: "Caminho de destino inválido." }
+    }
+
+    const newName = destSegments.pop()!
+    let destPaiId: string | null = null
+
+    for (const seg of destSegments) {
+      let folder: { id: string; nome: string; tipo: string; paiId: string | null } | null = await prisma.no.findFirst({
+        where: { nome: seg, paiId: destPaiId, tipo: "PASTA" },
+      })
+      if (!folder) {
+        const maxOrdem: { ordem: number } | null = await prisma.no.findFirst({
+          where: { paiId: destPaiId },
+          orderBy: { ordem: "desc" },
+          select: { ordem: true },
+        })
+        const novaOrdem: number = (maxOrdem?.ordem ?? -1) + 1
+        folder = await prisma.no.create({
+          data: {
+            nome: seg,
+            tipo: "PASTA",
+            paiId: destPaiId,
+            ordem: novaOrdem,
+          },
+        })
+      }
+      destPaiId = folder.id
+    }
+
+    async function copiarRecursivo(origemId: string, paiDestId: string | null, nomeOverride?: string) {
+      const orig = await prisma.no.findUnique({
+        where: { id: origemId },
+      })
+      if (!orig) return null
+
+      const maxOrdem: { ordem: number } | null = await prisma.no.findFirst({
+        where: { paiId: paiDestId },
+        orderBy: { ordem: "desc" },
+        select: { ordem: true },
+      })
+      const novaOrdem: number = (maxOrdem?.ordem ?? -1) + 1
+
+      const copia = await prisma.no.create({
+        data: {
+          nome: nomeOverride || orig.nome,
+          tipo: orig.tipo,
+          conteudo: orig.conteudo,
+          paiId: paiDestId,
+          ordem: novaOrdem,
+        },
+      })
+
+      const filhos = await prisma.no.findMany({
+        where: { paiId: origemId },
+      })
+      for (const filho of filhos) {
+        await copiarRecursivo(filho.id, copia.id)
+      }
+
+      return copia
+    }
+
+    const resultadoCopia = await copiarRecursivo(sourceNode.id, destPaiId, newName)
+    revalidatePath("/")
+    return {
+      success: true,
+      id: resultadoCopia?.id,
+      tipo: resultadoCopia?.tipo,
+    }
   }
 
   const segments = rawPath.split("/").map((s) => s.trim()).filter(Boolean)
