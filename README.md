@@ -20,7 +20,7 @@ A minimal space built for one thing: taking notes in class. Folders and markdown
 
 ## Status
 
-This is v1 — the core is in place (folder/file tree, PIN-gated writes, markdown editor). Image paste and full keyboard navigation (quick open, command bar) are specced but not built yet; see [`TASKS.md`](./TASKS.md) for what's next.
+This is v1 — fully implemented with folder/file tree, PIN-gated writes, security policies, Google Authenticator (TOTP), markdown editor, image paste, quick open, command bar, and settings management; see [`docs/TASKS.md`](./docs/TASKS.md) for future plans.
 
 ## Stack
 
@@ -34,7 +34,7 @@ This is v1 — the core is in place (folder/file tree, PIN-gated writes, markdow
 | Database | [Neon](https://neon.tech) (serverless Postgres) |
 | Deploy | [Vercel](https://vercel.com) |
 
-Full architecture in [`SPEC.md`](./SPEC.md), design system in [`DESIGN.md`](./DESIGN.md).
+Full architecture in [`docs/SPEC.md`](./docs/SPEC.md), design system in [`docs/DESIGN.md`](./docs/DESIGN.md).
 
 ## Run your own
 
