@@ -56,6 +56,11 @@ bun run scripts/generate-pin-hash.ts
 | `DATABASE_URL` | Neon connection string |
 | `PIN_HASH` | Hash generated in step 3 — never put the plain PIN here |
 
+| `SETTINGS_SETUP_KEY` | One-time secret used to enroll Google Authenticator. Define it directly, for example: `SETTINGS_SETUP_KEY=uma-chave-longa-e-aleatoria` |
+| `TOTP_ENCRYPTION_KEY` | Base64 key with 32 bytes used to encrypt the Authenticator secret |
+
+Generate `TOTP_ENCRYPTION_KEY` with `openssl rand -base64 32`, and add its output directly to the environment, for example: `TOTP_ENCRYPTION_KEY=<output-do-comando>`. Do not hash either settings variable. Remove the setup key after the first enrollment. To recover from a lost Authenticator, clear `totpSecretCriptografado` and `totpConfiguradoEm` in the single `Configuracao` record, set a new setup key, and enroll again.
+
 **5. Local dev:**
 
 ```bash

@@ -21,17 +21,15 @@ export function ThemeProvider({
   enableSystem?: boolean
   disableTransitionOnChange?: boolean
 }) {
-  const [theme, setThemeState] = React.useState<Theme>("system")
+  const [theme, setThemeState] = React.useState<Theme>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("theme") as Theme) || "system"
+    }
+    return "system"
+  })
   const [resolvedTheme, setResolvedTheme] = React.useState<"dark" | "light">("light")
 
-  React.useEffect(() => {
-    const saved = localStorage.getItem("theme") as Theme | null
-    if (saved) {
-      setThemeState(saved)
-    }
-  }, [])
-
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const root = document.documentElement
     root.classList.remove("light", "dark")
 
@@ -40,6 +38,7 @@ export function ThemeProvider({
       effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setResolvedTheme(effectiveTheme as "dark" | "light")
     root.classList.add(effectiveTheme)
   }, [theme])

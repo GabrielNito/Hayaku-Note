@@ -24,6 +24,7 @@ import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { uploadFiles } from "@/lib/uploadthing"
 import { Download } from "lucide-react"
+import { liberarAcesso } from "@/actions/acesso"
 
 const lowlight = createLowlight(common)
 lowlight.register("javascript", js)
@@ -61,12 +62,16 @@ interface NoteEditorProps {
   noId: string
   initialContent: string
   caminhoBreadcrumb: { id: string; nome: string }[]
+  exigirPinExportar: boolean
+  exigirPinUploadImagem: boolean
 }
 
 export function NoteEditor({
   noId,
   initialContent,
   caminhoBreadcrumb,
+  exigirPinExportar,
+  exigirPinUploadImagem,
 }: NoteEditorProps) {
   const router = useRouter()
   const { toggleSidebar } = useSidebar()
@@ -77,6 +82,9 @@ export function NoteEditor({
   const [prevNoId, setPrevNoId] = React.useState(noId)
   const [prevInitialContent, setPrevInitialContent] = React.useState(initialContent)
   const [savedContent, setSavedContent] = React.useState(initialContent)
+  const [showExportPinModal, setShowExportPinModal] = React.useState(false)
+  const [showImagePinModal, setShowImagePinModal] = React.useState(false)
+  const [pendingImage, setPendingImage] = React.useState<File | null>(null)
 
   if (noId !== prevNoId || initialContent !== prevInitialContent) {
     setPrevNoId(noId)
@@ -122,16 +130,12 @@ export function NoteEditor({
             const file = item.getAsFile()
             if (!file) return true
 
-            uploadFiles("noteImageUploader", { files: [file] })
-              .then((res) => {
-                if (res && res[0]) {
-                  const url = res[0].url
-                  editor?.chain().focus().setImage({ src: url, alt: file.name }).run()
-                }
-              })
-              .catch((err) => {
-                console.error("Erro ao enviar imagem colada:", err)
-              })
+            if (exigirPinUploadImagem) {
+              setPendingImage(file)
+              setShowImagePinModal(true)
+            } else {
+              enviarImagem(file)
+            }
 
             return true
           }
@@ -145,16 +149,12 @@ export function NoteEditor({
         for (const file of Array.from(files)) {
           if (file.type.indexOf("image") === 0) {
             event.preventDefault()
-            uploadFiles("noteImageUploader", { files: [file] })
-              .then((res) => {
-                if (res && res[0]) {
-                  const url = res[0].url
-                  editor?.chain().focus().setImage({ src: url, alt: file.name }).run()
-                }
-              })
-              .catch((err) => {
-                console.error("Erro ao enviar imagem arrastada:", err)
-              })
+            if (exigirPinUploadImagem) {
+              setPendingImage(file)
+              setShowImagePinModal(true)
+            } else {
+              enviarImagem(file)
+            }
 
             return true
           }
@@ -168,6 +168,18 @@ export function NoteEditor({
       setIsDirty(markdown !== savedContent)
     },
   })
+
+  function enviarImagem(file: File) {
+    uploadFiles("noteImageUploader", { files: [file] })
+      .then((res) => {
+        if (res && res[0]) {
+          editor?.chain().focus().setImage({ src: res[0].ufsUrl || res[0].url, alt: file.name }).run()
+        }
+      })
+      .catch((err) => {
+        console.error("Erro ao enviar imagem:", err)
+      })
+  }
 
   const handleTriggerSave = React.useCallback(() => {
     if (!editor) return
@@ -197,6 +209,19 @@ export function NoteEditor({
     link.remove()
     URL.revokeObjectURL(url)
   }, [caminhoBreadcrumb, editor])
+
+  async function confirmarExportacao(pin: string) {
+    const result = await liberarAcesso(pin, ["export"])
+    if (!result.success) throw new Error(result.error || "Não foi possível autorizar a exportação.")
+    handleExportMarkdown()
+  }
+
+  async function confirmarUploadImagem(pin: string) {
+    const result = await liberarAcesso(pin, ["upload"])
+    if (!result.success) throw new Error(result.error || "Não foi possível autorizar o upload.")
+    if (pendingImage) enviarImagem(pendingImage)
+    setPendingImage(null)
+  }
 
   // Whenever savedContent changes (switching notes), update editor content
   React.useEffect(() => {
@@ -321,7 +346,7 @@ export function NoteEditor({
             type="button"
             size="icon-sm"
             variant="outline"
-            onClick={handleExportMarkdown}
+            onClick={() => exigirPinExportar ? setShowExportPinModal(true) : handleExportMarkdown()}
             aria-label="Exportar nota em Markdown"
             title="Exportar em Markdown"
           >
@@ -344,6 +369,23 @@ export function NoteEditor({
         onSuccess={executeSave}
         title="PIN para Salvar"
         description="Digite o PIN de 6 dígitos para autorizar a gravação desta nota."
+      />
+      <PinDialog
+        open={showExportPinModal}
+        onOpenChange={setShowExportPinModal}
+        onSuccess={confirmarExportacao}
+        title="PIN para exportar"
+        description="Digite o PIN para baixar esta nota em Markdown."
+      />
+      <PinDialog
+        open={showImagePinModal}
+        onOpenChange={(open) => {
+          setShowImagePinModal(open)
+          if (!open) setPendingImage(null)
+        }}
+        onSuccess={confirmarUploadImagem}
+        title="PIN para enviar imagem"
+        description="Digite o PIN antes de enviar esta imagem para a nota."
       />
     </div>
   )

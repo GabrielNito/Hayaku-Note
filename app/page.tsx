@@ -4,12 +4,20 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 import { redirect } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { GlobalShortcuts } from "@/components/global-shortcuts"
+import { AccessGate } from "@/components/access-gate"
+import { temAcessosPin } from "@/lib/pin-session"
+import { obterPoliticasAtuais } from "@/lib/security-policies"
 
 export const metadata = {
   title: "Hayaku Note",
 }
 
 export default async function HomePage() {
+  const politicas = await obterPoliticasAtuais()
+  if (politicas.exigirPinArvore && !(await temAcessosPin(["tree"]))) {
+    return <AccessGate scopes={["tree"]} title="Este site está protegido" description="Digite o PIN para visualizar a árvore e as notas liberadas nesta sessão." />
+  }
+
   const arvore = await obterArvore()
   const primeiroArquivo = await obterPrimeiroArquivo()
 
@@ -18,7 +26,7 @@ export default async function HomePage() {
   }
 
   return (
-    <GlobalShortcuts arvore={arvore}>
+    <GlobalShortcuts arvore={arvore} exigirPinBusca={politicas.exigirPinBusca}>
       <SidebarProvider>
         <div className="flex h-screen w-full overflow-hidden">
           <AppSidebar arvore={arvore} />
