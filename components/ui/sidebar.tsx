@@ -97,7 +97,7 @@ function SidebarProvider({
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
-        event.key.toLowerCase() === SIDEBAR_KEYBOARD_SHORTCUT &&
+        event.key?.toLowerCase() === SIDEBAR_KEYBOARD_SHORTCUT &&
         (event.metaKey || event.ctrlKey) &&
         event.shiftKey
       ) {

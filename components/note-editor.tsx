@@ -92,7 +92,7 @@ export function NoteEditor({
   const [isChatOpen, setIsChatOpen] = React.useState(false)
   const [showAiPinModal, setShowAiPinModal] = React.useState(false)
 
-  if (noId !== prevNoId || initialContent !== prevInitialContent) {
+  if (noId !== prevNoId) {
     setPrevNoId(noId)
     setPrevInitialContent(initialContent)
     setSavedContent(initialContent)
@@ -252,7 +252,7 @@ export function NoteEditor({
     }
   }
 
-  // Whenever savedContent changes (switching notes), update editor content
+  // Whenever active note changes (switching notes), update editor content and focus start
   React.useEffect(() => {
     if (editor && savedContent) {
       // @ts-expect-error markdown storage
@@ -262,13 +262,7 @@ export function NoteEditor({
       }
       editor.commands.focus("start")
     }
-  }, [noId, savedContent, editor])
-
-  React.useEffect(() => {
-    if (editor) {
-      editor.commands.focus("start")
-    }
-  }, [editor])
+  }, [noId, editor])
 
   // Global shortcuts for Save (Ctrl+S), Sidebar (Ctrl+Shift+B), and Bold (Ctrl+B)
   React.useEffect(() => {
@@ -327,7 +321,6 @@ export function NoteEditor({
       now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     )
     setShowPinModal(false)
-    router.refresh()
   }
 
   const getDocumentContent = React.useCallback(() => {
@@ -407,7 +400,7 @@ export function NoteEditor({
           <ResizablePanelGroup orientation="horizontal" className="flex-1 h-full">
             <ResizablePanel defaultSize={60} minSize={30} className="flex flex-col h-full">
               <ScrollArea className="flex-1 h-full">
-                <main className="px-4 py-8 flex justify-center min-h-full">
+                <main className="px-4 py-8 pb-48 flex justify-center min-h-full">
                   <div className="w-full max-w-180 font-sans text-foreground">
                     <EditorContent editor={editor} />
                   </div>
@@ -439,7 +432,14 @@ export function NoteEditor({
       {/* PIN Dialog for saving */}
       <PinDialog
         open={showPinModal}
-        onOpenChange={setShowPinModal}
+        onOpenChange={(open) => {
+          setShowPinModal(open)
+          if (!open) {
+            requestAnimationFrame(() => {
+              editor?.chain().focus().run()
+            })
+          }
+        }}
         onSuccess={executeSave}
         title="PIN para Salvar"
         description="Digite o PIN de 6 dígitos para autorizar a gravação desta nota."
