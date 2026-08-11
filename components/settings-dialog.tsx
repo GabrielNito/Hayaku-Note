@@ -11,6 +11,8 @@ import {
   iniciarCadastroAuthenticator,
   iniciarTrocaAuthenticator,
   obterPoliticasSeguranca,
+  obterStatusApiKeys,
+  atualizarApiKey,
   type PoliticasSeguranca,
   validarAuthenticator,
 } from "@/actions/configuracoes"
@@ -34,6 +36,7 @@ const policyLabels: { key: PolicyKey; title: string; description: string }[] = [
   { key: "exigirPinBusca", title: "Busca e Quick Open", description: "Protege a descoberta de nomes de notas." },
   { key: "exigirPinCommandBar", title: "Command Bar", description: "Protege comandos que podem alterar a estrutura." },
   { key: "exigirPinUploadImagem", title: "Upload de imagens", description: "Protege a inclusão de arquivos em notas." },
+  { key: "exigirPinChatAi", title: "Chat com IA (BYOK)", description: "Exige PIN antes de abrir o assistente de inteligência artificial." },
 ]
 
 const policyGroups: { title: string; description: string; keys: PolicyKey[] }[] = [
@@ -50,7 +53,7 @@ const policyGroups: { title: string; description: string; keys: PolicyKey[] }[] 
   {
     title: "Recursos auxiliares",
     description: "Defina proteções para ações complementares da aplicação.",
-    keys: ["exigirPinExportar", "exigirPinCommandBar", "exigirPinUploadImagem"],
+    keys: ["exigirPinExportar", "exigirPinCommandBar", "exigirPinUploadImagem", "exigirPinChatAi"],
   },
 ]
 
@@ -73,6 +76,9 @@ export function SettingsDialog() {
   const [secret, setSecret] = React.useState("")
   const [qrCode, setQrCode] = React.useState("")
   const [policies, setPolicies] = React.useState<PoliticasSeguranca | null>(null)
+  const [apiKeysStatus, setApiKeysStatus] = React.useState<{ google: boolean; openai: boolean; anthropic: boolean } | null>(null)
+  const [keyInputs, setKeyInputs] = React.useState({ google: "", openai: "", anthropic: "" })
+  const [keyLoading, setKeyLoading] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState("")
   const [saved, setSaved] = React.useState(false)
@@ -100,8 +106,12 @@ export function SettingsDialog() {
   }
 
   async function abrirPainel() {
-    const data = await obterPoliticasSeguranca()
+    const [data, keysStatus] = await Promise.all([
+      obterPoliticasSeguranca(),
+      obterStatusApiKeys(),
+    ])
     setPolicies(data)
+    setApiKeysStatus(keysStatus)
     setAuthOpen(false)
     setSettingsOpen(true)
   }
@@ -178,9 +188,49 @@ export function SettingsDialog() {
     }
   }
 
+  async function handleSalvarApiKey(provider: "google" | "openai" | "anthropic") {
+    const keyVal = keyInputs[provider]
+    if (!keyVal.trim()) return
+    setKeyLoading(provider)
+    setError("")
+    try {
+      const res = await atualizarApiKey(provider, keyVal)
+      if (!res.success) throw new Error(res.error || "Erro ao salvar API Key.")
+      const updatedStatus = await obterStatusApiKeys()
+      setApiKeysStatus(updatedStatus)
+      setKeyInputs((prev) => ({ ...prev, [provider]: "" }))
+      setSaved(true)
+      window.setTimeout(() => setSaved(false), 2500)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao salvar API Key.")
+    } finally {
+      setKeyLoading(null)
+    }
+  }
+
+  async function handleRemoverApiKey(provider: "google" | "openai" | "anthropic") {
+    if (!confirm(`Tem certeza que deseja remover a API Key de ${provider}?`)) return
+    setKeyLoading(provider)
+    setError("")
+    try {
+      const res = await atualizarApiKey(provider, null)
+      if (!res.success) throw new Error(res.error || "Erro ao remover API Key.")
+      const updatedStatus = await obterStatusApiKeys()
+      setApiKeysStatus(updatedStatus)
+      setKeyInputs((prev) => ({ ...prev, [provider]: "" }))
+      setSaved(true)
+      window.setTimeout(() => setSaved(false), 2500)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao remover API Key.")
+    } finally {
+      setKeyLoading(null)
+    }
+  }
+
   async function fecharPainel() {
     setSettingsOpen(false)
     setPolicies(null)
+    setApiKeysStatus(null)
     await fecharConfiguracoes()
   }
 
@@ -248,7 +298,7 @@ export function SettingsDialog() {
       </Dialog>
 
       <Dialog open={settingsOpen} onOpenChange={(open) => { if (!open) void fecharPainel() }}>
-        <DialogContent className="h-[75vh] max-w-[calc(100%-2rem)] gap-0 overflow-hidden p-0 sm:max-w-[75vw]" showCloseButton={!loading}>
+        <DialogContent className="h-[80vh] max-w-[calc(100%-2rem)] gap-0 overflow-hidden p-0 sm:max-w-[75vw]" showCloseButton={!loading}>
           <DialogHeader className="border-b border-border/60 px-6 py-5 pr-12">
             <DialogTitle>Configurações</DialogTitle>
             <DialogDescription>As mudanças desta área exigem uma sessão válida do Google Authenticator.</DialogDescription>
@@ -260,6 +310,67 @@ export function SettingsDialog() {
               <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">Defina quando o PIN comum será exigido.</p>
             </aside>
             <section className="space-y-6 p-6">
+              {/* Seção Provedores de IA (BYOK) */}
+              <div className="rounded-lg border border-border/60 p-4 space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium">Provedores de IA (Bring Your Own Key)</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">Insira suas chaves de API com segurança. Elas são criptografadas e restritas à sua sessão autenticada.</p>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  {(
+                    [
+                      { id: "google", name: "Google Gemini", placeholder: "AIzaSy..." },
+                      { id: "openai", name: "OpenAI", placeholder: "sk-..." },
+                      { id: "anthropic", name: "Anthropic Claude", placeholder: "sk-ant-..." },
+                    ] as const
+                  ).map(({ id, name, placeholder }) => {
+                    const isConfigured = apiKeysStatus?.[id]
+                    return (
+                      <div key={id} className="rounded-lg border border-border/60 p-3 space-y-2 bg-muted/20">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium">{name}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${isConfigured ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
+                            {isConfigured ? "Configurada" : "Não configurada"}
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            type="password"
+                            placeholder={isConfigured ? "•••••••••••••••• (Substituir chave existente)" : placeholder}
+                            value={keyInputs[id]}
+                            onChange={(e) => setKeyInputs((prev) => ({ ...prev, [id]: e.target.value }))}
+                            disabled={keyLoading === id}
+                            className="text-xs flex-1 h-8"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-8 text-xs"
+                            disabled={keyLoading === id || !keyInputs[id].trim()}
+                            onClick={() => void handleSalvarApiKey(id)}
+                          >
+                            {keyLoading === id ? "Salvando..." : isConfigured ? "Alterar" : "Salvar"}
+                          </Button>
+                          {isConfigured && (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="h-8 text-xs"
+                              disabled={keyLoading === id}
+                              onClick={() => void handleRemoverApiKey(id)}
+                            >
+                              Remover
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
               <div>
                 <h3 className="text-sm font-medium">Leitura de arquivos</h3>
                 <p className="mt-1 text-xs text-muted-foreground">Escolha como o acesso ao conteúdo de uma nota será protegido.</p>

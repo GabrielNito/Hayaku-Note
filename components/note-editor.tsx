@@ -23,8 +23,12 @@ import { useRouter } from "next/navigation"
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { uploadFiles } from "@/lib/uploadthing"
-import { Download } from "lucide-react"
+import { Download, Sparkles } from "lucide-react"
 import { liberarAcesso } from "@/actions/acesso"
+import { verificarAcessoChatAi } from "@/actions/configuracoes"
+import { DocumentChat } from "@/components/document-chat"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 
 const lowlight = createLowlight(common)
 lowlight.register("javascript", js)
@@ -85,6 +89,8 @@ export function NoteEditor({
   const [showExportPinModal, setShowExportPinModal] = React.useState(false)
   const [showImagePinModal, setShowImagePinModal] = React.useState(false)
   const [pendingImage, setPendingImage] = React.useState<File | null>(null)
+  const [isChatOpen, setIsChatOpen] = React.useState(false)
+  const [showAiPinModal, setShowAiPinModal] = React.useState(false)
 
   if (noId !== prevNoId || initialContent !== prevInitialContent) {
     setPrevNoId(noId)
@@ -223,6 +229,29 @@ export function NoteEditor({
     setPendingImage(null)
   }
 
+  async function confirmarAcessoAi(pin: string) {
+    const result = await liberarAcesso(pin, ["ai-chat"])
+    if (!result.success) throw new Error(result.error || "Não foi possível autorizar o acesso ao chat com IA.")
+    setIsChatOpen(true)
+  }
+
+  async function handleToggleChat() {
+    if (isChatOpen) {
+      setIsChatOpen(false)
+      return
+    }
+    try {
+      const access = await verificarAcessoChatAi()
+      if (access.exigirPin && !access.autorizado) {
+        setShowAiPinModal(true)
+      } else {
+        setIsChatOpen(true)
+      }
+    } catch {
+      setIsChatOpen(true)
+    }
+  }
+
   // Whenever savedContent changes (switching notes), update editor content
   React.useEffect(() => {
     if (editor && savedContent) {
@@ -301,6 +330,12 @@ export function NoteEditor({
     router.refresh()
   }
 
+  const getDocumentContent = React.useCallback(() => {
+    if (!editor) return initialContent
+    // @ts-expect-error getMarkdown
+    return (editor.storage.markdown.getMarkdown() as string) || initialContent
+  }, [editor, initialContent])
+
   return (
     <div className="flex flex-col h-screen w-full bg-background overflow-hidden">
       {/* Top fine bar: breadcrumb + save status */}
@@ -343,6 +378,17 @@ export function NoteEditor({
           </Button>
 
           <Button
+            size="sm"
+            variant={isChatOpen ? "secondary" : "outline"}
+            onClick={handleToggleChat}
+            className="h-7 text-xs font-sans px-2.5 gap-1.5"
+            title="Alternar Chat com IA"
+          >
+            <Sparkles className="size-3.5 text-primary" />
+            <span>IA</span>
+          </Button>
+
+          <Button
             type="button"
             size="icon-sm"
             variant="outline"
@@ -355,12 +401,40 @@ export function NoteEditor({
         </div>
       </header>
 
-      {/* Editor area centered (~720px max width) */}
-      <main className="flex-1 overflow-y-auto px-4 py-8 flex justify-center">
-        <div className="w-full max-w-180 font-sans text-foreground">
-          <EditorContent editor={editor} />
-        </div>
-      </main>
+      {/* Content area: editor + side chat with resizable panels */}
+      <div className="flex-1 flex flex-row min-h-0 overflow-hidden">
+        {isChatOpen ? (
+          <ResizablePanelGroup orientation="horizontal" className="flex-1 h-full">
+            <ResizablePanel defaultSize={60} minSize={30} className="flex flex-col h-full">
+              <ScrollArea className="flex-1 h-full">
+                <main className="px-4 py-8 flex justify-center min-h-full">
+                  <div className="w-full max-w-180 font-sans text-foreground">
+                    <EditorContent editor={editor} />
+                  </div>
+                </main>
+              </ScrollArea>
+            </ResizablePanel>
+
+            <ResizableHandle withHandle />
+
+            <ResizablePanel defaultSize={40} minSize={25} className="flex flex-col h-full bg-background">
+              <DocumentChat
+                isOpen={isChatOpen}
+                onClose={() => setIsChatOpen(false)}
+                getDocumentContent={getDocumentContent}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        ) : (
+          <ScrollArea className="flex-1 h-full w-full">
+            <main className="px-4 py-8 flex justify-center min-h-full">
+              <div className="w-full max-w-180 font-sans text-foreground">
+                <EditorContent editor={editor} />
+              </div>
+            </main>
+          </ScrollArea>
+        )}
+      </div>
 
       {/* PIN Dialog for saving */}
       <PinDialog
@@ -386,6 +460,13 @@ export function NoteEditor({
         onSuccess={confirmarUploadImagem}
         title="PIN para enviar imagem"
         description="Digite o PIN antes de enviar esta imagem para a nota."
+      />
+      <PinDialog
+        open={showAiPinModal}
+        onOpenChange={setShowAiPinModal}
+        onSuccess={confirmarAcessoAi}
+        title="PIN para acessar Assistente IA"
+        description="Digite o PIN de 6 dígitos para autorizar o acesso ao chat com inteligência artificial."
       />
     </div>
   )
