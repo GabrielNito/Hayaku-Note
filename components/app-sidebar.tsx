@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { SettingsDialog } from "@/components/settings-dialog"
 
 interface SidebarTreeProps {
   arvore: NoItem[]
@@ -411,16 +412,21 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="p-2 border-t border-border/50 flex flex-row items-center justify-between">
-        <span className="text-[10px] text-muted-foreground font-mono">
-          Hayaku Note v1.0
-        </span>
-        <button
-          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-          className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-accent/50 transition-colors"
-        >
-          {mounted ? (resolvedTheme === "dark" ? "Claro" : "Escuro") : "Tema"}
-        </button>
+      <SidebarFooter className="p-2 border-t border-border/50 flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-1">
+          <SettingsDialog />
+          <button
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-accent/50 transition-colors shrink-0"
+          >
+            {mounted ? (resolvedTheme === "dark" ? "Claro" : "Escuro") : "Tema"}
+          </button>
+        </div>
+        <div className="px-0.5">
+          <span className="text-[10px] text-muted-foreground font-mono">
+            Hayaku Note v1.0
+          </span>
+        </div>
       </SidebarFooter>
 
       {/* Root Creation Dialog */}

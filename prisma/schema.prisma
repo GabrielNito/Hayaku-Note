@@ -23,3 +23,22 @@ model No {
 
   @@index([paiId])
 }
+
+model Configuracao {
+  id                       String   @id
+  totpSecretCriptografado  String?
+  totpConfiguradoEm        DateTime?
+  exigirPinArvore          Boolean  @default(false)
+  acessoArquivo            String   @default("LIVRE")
+  exigirPinCriar           Boolean  @default(true)
+  exigirPinEditar          Boolean  @default(true)
+  exigirPinRenomear        Boolean  @default(true)
+  exigirPinMoverCopiar     Boolean  @default(true)
+  exigirPinExcluir         Boolean  @default(true)
+  exigirPinExportar        Boolean  @default(false)
+  exigirPinBusca           Boolean  @default(false)
+  exigirPinCommandBar      Boolean  @default(true)
+  exigirPinUploadImagem    Boolean  @default(true)
+  criadoEm                 DateTime @default(now())
+  atualizadoEm             DateTime @updatedAt
+}

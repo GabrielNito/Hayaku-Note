@@ -5,6 +5,9 @@ import { NoteEditor } from "@/components/note-editor"
 import { GlobalShortcuts } from "@/components/global-shortcuts"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
+import { AccessGate } from "@/components/access-gate"
+import { temAcessosPin } from "@/lib/pin-session"
+import { obterPoliticasAtuais } from "@/lib/security-policies"
 
 interface NotePageProps {
   params: Promise<{
@@ -14,6 +17,9 @@ interface NotePageProps {
 
 export async function generateMetadata({ params }: NotePageProps): Promise<Metadata> {
   const { noId } = await params
+  const politicas = await obterPoliticasAtuais()
+  const scopes = politicas.acessoArquivo === "SESSAO" ? ["files"] : politicas.acessoArquivo === "POR_ARQUIVO" ? [`file:${noId}`] : []
+  if (scopes.length > 0 && !(await temAcessosPin(scopes))) return { title: "Hayaku Note" }
   const no = await obterNo(noId)
   if (!no) {
     return {
@@ -27,6 +33,15 @@ export async function generateMetadata({ params }: NotePageProps): Promise<Metad
 
 export default async function NotePage({ params }: NotePageProps) {
   const { noId } = await params
+  const politicas = await obterPoliticasAtuais()
+  const scopes: string[] = []
+  if (politicas.exigirPinArvore) scopes.push("tree")
+  if (politicas.acessoArquivo === "SESSAO") scopes.push("files")
+  if (politicas.acessoArquivo === "POR_ARQUIVO") scopes.push(`file:${noId}`)
+
+  if (scopes.length > 0 && !(await temAcessosPin(scopes))) {
+    return <AccessGate scopes={scopes} title="Nota protegida" description="Digite o PIN para continuar. As permissões serão mantidas apenas nesta sessão." />
+  }
 
   const [arvore, no, caminho] = await Promise.all([
     obterArvore(),
@@ -39,7 +54,7 @@ export default async function NotePage({ params }: NotePageProps) {
   }
 
   return (
-    <GlobalShortcuts arvore={arvore}>
+    <GlobalShortcuts arvore={arvore} exigirPinBusca={politicas.exigirPinBusca}>
       <SidebarProvider>
         <div className="flex h-screen w-full overflow-hidden">
           <AppSidebar arvore={arvore} activeId={noId} />
@@ -48,6 +63,8 @@ export default async function NotePage({ params }: NotePageProps) {
               noId={no.id}
               initialContent={no.conteudo || ""}
               caminhoBreadcrumb={caminho}
+              exigirPinExportar={politicas.exigirPinExportar}
+              exigirPinUploadImagem={politicas.exigirPinUploadImagem}
             />
           </div>
         </div>

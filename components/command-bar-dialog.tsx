@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { PinDialog } from "@/components/pin-dialog"
 import { executarComandoCli } from "@/actions/no"
 import { NoItem } from "@/actions/types"
@@ -99,18 +98,6 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
     setInputVal(newVal)
     setTabState(null)
   }
-
-
-
-  React.useEffect(() => {
-    if (open) {
-      setInputVal("")
-      setError(null)
-      setShowPinModal(false)
-      setPendingCommand("")
-      setTabState(null)
-    }
-  }, [open])
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -214,7 +201,19 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog
+        open={open}
+        onOpenChange={(isOpen) => {
+          if (isOpen) {
+            setInputVal("")
+            setError(null)
+            setShowPinModal(false)
+            setPendingCommand("")
+            setTabState(null)
+          }
+          onOpenChange(isOpen)
+        }}
+      >
         <DialogContent className="sm:max-w-2xl p-4">
           <DialogHeader className="sr-only">
             <DialogTitle>Command Bar</DialogTitle>

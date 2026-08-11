@@ -5,16 +5,21 @@ import { useTheme } from "@/components/theme-provider"
 import { QuickOpenDialog } from "@/components/quick-open-dialog"
 import { CommandBarDialog } from "@/components/command-bar-dialog"
 import { NoItem } from "@/actions/types"
+import { PinDialog } from "@/components/pin-dialog"
+import { liberarAcesso } from "@/actions/acesso"
+import { ReadSessionBoundary } from "@/components/read-session-boundary"
 
 interface GlobalShortcutsProps {
   arvore: NoItem[]
+  exigirPinBusca?: boolean
   children: React.ReactNode
 }
 
-export function GlobalShortcuts({ arvore, children }: GlobalShortcutsProps) {
+export function GlobalShortcuts({ arvore, exigirPinBusca = false, children }: GlobalShortcutsProps) {
   const { resolvedTheme, setTheme } = useTheme()
   const [quickOpenOpen, setQuickOpenOpen] = React.useState(false)
   const [commandBarOpen, setCommandBarOpen] = React.useState(false)
+  const [searchPinOpen, setSearchPinOpen] = React.useState(false)
 
   React.useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -42,7 +47,8 @@ export function GlobalShortcuts({ arvore, children }: GlobalShortcutsProps) {
       if (isMod && !e.shiftKey && key === "p") {
         e.preventDefault()
         e.stopPropagation()
-        setQuickOpenOpen(true)
+        if (exigirPinBusca) setSearchPinOpen(true)
+        else setQuickOpenOpen(true)
         setCommandBarOpen(false)
         return
       }
@@ -59,8 +65,16 @@ export function GlobalShortcuts({ arvore, children }: GlobalShortcutsProps) {
     return () => window.removeEventListener("keydown", handleKeyDown, { capture: true })
   }, [resolvedTheme, setTheme, quickOpenOpen, commandBarOpen])
 
+  async function confirmarBusca(pin: string) {
+    const result = await liberarAcesso(pin, ["search"])
+    if (!result.success) throw new Error(result.error || "Não foi possível liberar a busca.")
+    setSearchPinOpen(false)
+    setQuickOpenOpen(true)
+  }
+
   return (
     <>
+      <ReadSessionBoundary />
       {children}
       <QuickOpenDialog
         open={quickOpenOpen}
@@ -72,6 +86,7 @@ export function GlobalShortcuts({ arvore, children }: GlobalShortcutsProps) {
         onOpenChange={setCommandBarOpen}
         arvore={arvore}
       />
+      <PinDialog open={searchPinOpen} onOpenChange={setSearchPinOpen} onSuccess={confirmarBusca} title="PIN para buscar" description="Digite o PIN para usar a busca de notas." />
     </>
   )
 }
