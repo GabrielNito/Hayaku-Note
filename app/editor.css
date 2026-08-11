@@ -166,3 +166,39 @@
 .hljs-link {
   color: inherit;
 }
+
+/* ── WikiLink [[nota]] ── */
+.wiki-link-wrapper {
+  display: inline;
+}
+
+.wiki-link {
+  display: inline;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0 2px;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.wiki-link--found {
+  color: var(--accent-foreground);
+  background-color: color-mix(in oklch, var(--accent) 30%, transparent);
+  text-decoration-color: var(--accent-foreground);
+}
+
+.wiki-link--found:hover {
+  background-color: color-mix(in oklch, var(--accent) 55%, transparent);
+}
+
+.wiki-link--not-found {
+  color: var(--muted-foreground);
+  text-decoration-color: var(--muted-foreground);
+  opacity: 0.7;
+}
+
+.wiki-link--not-found:hover {
+  opacity: 1;
+}

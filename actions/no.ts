@@ -261,6 +261,109 @@ export async function salvarConteudo(
   }
 }
 
+export async function reordenarNos(
+  pin: string,
+  nos: { id: string; ordem: number }[]
+): Promise<{ success: boolean; error?: string }> {
+  const isValid = await validarPin(pin)
+  if (!isValid) {
+    return { success: false, error: "PIN incorreto." }
+  }
+
+  if (!nos || nos.length === 0) {
+    return { success: false, error: "Nenhum nó para reordenar." }
+  }
+
+  try {
+    await prisma.$transaction(
+      nos.map((no) =>
+        prisma.no.update({
+          where: { id: no.id },
+          data: { ordem: no.ordem },
+        })
+      )
+    )
+
+    revalidatePath("/")
+    return { success: true }
+  } catch (err) {
+    console.error("Erro ao reordenar nos:", err)
+    return { success: false, error: "Erro ao reordenar no banco de dados." }
+  }
+}
+
+export async function moverNo(
+  pin: string,
+  id: string,
+  novoPaiId: string | null
+): Promise<{ success: boolean; error?: string }> {
+  const isValid = await validarPin(pin)
+  if (!isValid) {
+    return { success: false, error: "PIN incorreto." }
+  }
+
+  const no = await prisma.no.findUnique({ where: { id } })
+  if (!no) {
+    return { success: false, error: "Item não encontrado." }
+  }
+
+  if (novoPaiId && novoPaiId === id) {
+    return { success: false, error: "Não é possível mover um item para dentro de si mesmo." }
+  }
+
+  // Prevent moving folder into its descendant
+  if (no.tipo === "PASTA" && novoPaiId) {
+    let atualId: string | null = novoPaiId
+    while (atualId) {
+      if (atualId === id) {
+        return { success: false, error: "Não é possível mover uma pasta para dentro de si mesma." }
+      }
+      const pai: { paiId: string | null } | null = await prisma.no.findUnique({
+        where: { id: atualId },
+        select: { paiId: true },
+      })
+      atualId = pai?.paiId ?? null
+    }
+  }
+
+  // Check name conflict in target parent
+  const conflito = await prisma.no.findFirst({
+    where: {
+      paiId: novoPaiId ?? null,
+      NOT: { id },
+      nome: { equals: no.nome, mode: "insensitive" },
+    },
+  })
+
+  if (conflito) {
+    return { success: false, error: `Já existe um item com o nome "${no.nome}" neste local.` }
+  }
+
+  try {
+    const maxOrdem = await prisma.no.findFirst({
+      where: { paiId: novoPaiId ?? null },
+      orderBy: { ordem: "desc" },
+      select: { ordem: true },
+    })
+    const novaOrdem = (maxOrdem?.ordem ?? -1) + 1
+
+    await prisma.no.update({
+      where: { id },
+      data: {
+        paiId: novoPaiId ?? null,
+        ordem: novaOrdem,
+      },
+    })
+
+    revalidatePath("/")
+    return { success: true }
+  } catch (err) {
+    console.error("Erro ao mover no:", err)
+    return { success: false, error: "Erro ao mover no banco de dados." }
+  }
+}
+
+
 export async function executarComandoCli(
   pin: string,
   commandLine: string

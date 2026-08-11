@@ -8,6 +8,7 @@ import Placeholder from "@tiptap/extension-placeholder"
 import { Markdown } from "tiptap-markdown"
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight"
 import { ResizableImage } from "@/components/resizable-image"
+import { WikiLink } from "@/components/extensions/wiki-link"
 import { common, createLowlight } from "lowlight"
 import js from "highlight.js/lib/languages/javascript"
 import ts from "highlight.js/lib/languages/typescript"
@@ -23,6 +24,8 @@ import { useRouter } from "next/navigation"
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { uploadFiles } from "@/lib/uploadthing"
+import { Download } from "lucide-react"
+import type { NoItem } from "@/actions/types"
 
 const lowlight = createLowlight(common)
 lowlight.register("javascript", js)
@@ -60,12 +63,16 @@ interface NoteEditorProps {
   noId: string
   initialContent: string
   caminhoBreadcrumb: { id: string; nome: string }[]
+  nomeNota: string
+  arvore: NoItem[]
 }
 
 export function NoteEditor({
   noId,
   initialContent,
   caminhoBreadcrumb,
+  nomeNota,
+  arvore,
 }: NoteEditorProps) {
   const router = useRouter()
   const { toggleSidebar } = useSidebar()
@@ -108,6 +115,7 @@ export function NoteEditor({
         lowlight,
       }),
       ResizableImage,
+      WikiLink.configure({ arvore }),
     ],
     content: savedContent,
     editorProps: {
@@ -176,6 +184,19 @@ export function NoteEditor({
     setShowPinModal(true)
   }, [editor])
 
+  function exportarMd() {
+    if (!editor) return
+    // @ts-expect-error getMarkdown
+    const markdown = editor.storage.markdown.getMarkdown() as string
+    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `${nomeNota}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   // Whenever savedContent changes (switching notes), update editor content
   React.useEffect(() => {
     if (editor && savedContent) {
@@ -184,15 +205,8 @@ export function NoteEditor({
       if (currentMd !== savedContent) {
         editor.commands.setContent(savedContent)
       }
-      editor.commands.focus("start")
     }
   }, [noId, savedContent, editor])
-
-  React.useEffect(() => {
-    if (editor) {
-      editor.commands.focus("start")
-    }
-  }, [editor])
 
   // Global shortcuts for Save (Ctrl+S), Sidebar (Ctrl+Shift+B), and Bold (Ctrl+B)
   React.useEffect(() => {
@@ -284,6 +298,14 @@ export function NoteEditor({
               ? `Salvo às ${lastSavedTime}`
               : "Salvo"}
           </span>
+
+          <button
+            onClick={exportarMd}
+            title="Exportar como Markdown"
+            className="h-7 w-7 flex items-center justify-center rounded border border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+          >
+            <Download className="size-3.5" />
+          </button>
 
           <Button
             size="sm"

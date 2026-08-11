@@ -48,6 +48,8 @@ export default async function NotePage({ params }: NotePageProps) {
               noId={no.id}
               initialContent={no.conteudo || ""}
               caminhoBreadcrumb={caminho}
+              nomeNota={no.nome}
+              arvore={arvore}
             />
           </div>
         </div>

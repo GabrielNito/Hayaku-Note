@@ -34,6 +34,8 @@ export function PinDialog({
   const [errorMessage, setErrorMessage] = React.useState("")
   const [shake, setShake] = React.useState(false)
 
+  const inputRef = React.useRef<HTMLInputElement>(null)
+
   const [prevOpen, setPrevOpen] = React.useState(open)
   if (open !== prevOpen) {
     setPrevOpen(open)
@@ -45,6 +47,15 @@ export function PinDialog({
       setShake(false)
     }
   }
+
+  React.useEffect(() => {
+    if (open) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus()
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [open])
 
   async function handleSubmit(e?: React.FormEvent) {
     if (e) e.preventDefault()
@@ -81,6 +92,7 @@ export function PinDialog({
 
         <form onSubmit={handleSubmit} className="flex flex-col items-center gap-4 p-0">
           <InputOTP
+            ref={inputRef}
             maxLength={6}
             value={pin}
             onChange={(value) => {
