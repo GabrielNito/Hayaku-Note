@@ -4,6 +4,7 @@ import { timingSafeEqual } from "node:crypto"
 import QRCode from "qrcode"
 import { prisma } from "@/lib/prisma"
 import { criarSessaoConfiguracoes, encerrarSessaoConfiguracoes, temSessaoConfiguracoes } from "@/lib/settings-session"
+import { temAcessosPin } from "@/lib/pin-session"
 import {
   criarSegredoTotp,
   criarUriTotp,
@@ -26,6 +27,7 @@ export type PoliticasSeguranca = {
   exigirPinBusca: boolean
   exigirPinCommandBar: boolean
   exigirPinUploadImagem: boolean
+  exigirPinChatAi: boolean
 }
 
 const politicasPadrao: PoliticasSeguranca = {
@@ -40,6 +42,7 @@ const politicasPadrao: PoliticasSeguranca = {
   exigirPinBusca: false,
   exigirPinCommandBar: true,
   exigirPinUploadImagem: true,
+  exigirPinChatAi: true,
 }
 
 async function obterConfiguracao() {
@@ -77,7 +80,17 @@ function paraPoliticas(configuracao: Awaited<ReturnType<typeof obterConfiguracao
     exigirPinBusca: configuracao.exigirPinBusca,
     exigirPinCommandBar: configuracao.exigirPinCommandBar,
     exigirPinUploadImagem: configuracao.exigirPinUploadImagem,
+    exigirPinChatAi: configuracao.exigirPinChatAi,
   }
+}
+
+export async function verificarAcessoChatAi(): Promise<{ exigirPin: boolean; autorizado: boolean }> {
+  const configuracao = await obterConfiguracao()
+  if (!configuracao.exigirPinChatAi) {
+    return { exigirPin: false, autorizado: true }
+  }
+  const autorizado = await temAcessosPin(["ai-chat"])
+  return { exigirPin: true, autorizado }
 }
 
 export async function validarAuthenticator(code: string): Promise<{ success: boolean; setupRequired?: boolean; error?: string }> {
@@ -163,4 +176,40 @@ export async function confirmarTrocaAuthenticator(secret: string, code: string):
 
 export async function fecharConfiguracoes() {
   await encerrarSessaoConfiguracoes()
+}
+
+export async function obterStatusApiKeys(): Promise<{ google: boolean; openai: boolean; anthropic: boolean }> {
+  await exigirSessaoConfiguracoes()
+  const configuracao = await obterConfiguracao()
+  return {
+    google: Boolean(configuracao.googleApiKeyCriptografado),
+    openai: Boolean(configuracao.openaiApiKeyCriptografado),
+    anthropic: Boolean(configuracao.anthropicApiKeyCriptografado),
+  }
+}
+
+export async function verificarApiKeysConfiguradas(): Promise<{ google: boolean; openai: boolean; anthropic: boolean }> {
+  const configuracao = await obterConfiguracao()
+  return {
+    google: Boolean(configuracao.googleApiKeyCriptografado),
+    openai: Boolean(configuracao.openaiApiKeyCriptografado),
+    anthropic: Boolean(configuracao.anthropicApiKeyCriptografado),
+  }
+}
+
+export async function atualizarApiKey(provider: "google" | "openai" | "anthropic", apiKey: string | null): Promise<{ success: boolean; error?: string }> {
+  await exigirSessaoConfiguracoes()
+  const dataKey = provider === "google"
+    ? "googleApiKeyCriptografado"
+    : provider === "openai"
+    ? "openaiApiKeyCriptografado"
+    : "anthropicApiKeyCriptografado"
+
+  const encrypted = apiKey && apiKey.trim() ? criptografarSegredoTotp(apiKey.trim()) : null
+
+  await prisma.configuracao.update({
+    where: { id: CONFIGURACAO_ID },
+    data: { [dataKey]: encrypted },
+  })
+  return { success: true }
 }

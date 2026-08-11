@@ -39,6 +39,10 @@ model Configuracao {
   exigirPinBusca           Boolean  @default(false)
   exigirPinCommandBar      Boolean  @default(true)
   exigirPinUploadImagem    Boolean  @default(true)
+  exigirPinChatAi          Boolean  @default(true)
+  googleApiKeyCriptografado String?
+  openaiApiKeyCriptografado String?
+  anthropicApiKeyCriptografado String?
   criadoEm                 DateTime @default(now())
   atualizadoEm             DateTime @updatedAt
 }
