@@ -24,7 +24,7 @@ export function GlobalShortcuts({ arvore, exigirPinBusca = false, children }: Gl
   React.useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const isMod = e.metaKey || e.ctrlKey
-      const key = e.key.toLowerCase()
+      const key = e.key?.toLowerCase() || ""
 
       if (e.key === "Escape") {
         if (quickOpenOpen || commandBarOpen) {

@@ -1,8 +1,5 @@
-import { obterArvore, obterNo, obterCaminhoBreadcrumb } from "@/actions/no"
-import { AppSidebar } from "@/components/app-sidebar"
-import { SidebarProvider } from "@/components/ui/sidebar"
+import { obterNo, obterCaminhoBreadcrumb } from "@/actions/no"
 import { NoteEditor } from "@/components/note-editor"
-import { GlobalShortcuts } from "@/components/global-shortcuts"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { AccessGate } from "@/components/access-gate"
@@ -35,7 +32,6 @@ export default async function NotePage({ params }: NotePageProps) {
   const { noId } = await params
   const politicas = await obterPoliticasAtuais()
   const scopes: string[] = []
-  if (politicas.exigirPinArvore) scopes.push("tree")
   if (politicas.acessoArquivo === "SESSAO") scopes.push("files")
   if (politicas.acessoArquivo === "POR_ARQUIVO") scopes.push(`file:${noId}`)
 
@@ -43,8 +39,7 @@ export default async function NotePage({ params }: NotePageProps) {
     return <AccessGate scopes={scopes} title="Nota protegida" description="Digite o PIN para continuar. As permissões serão mantidas apenas nesta sessão." />
   }
 
-  const [arvore, no, caminho] = await Promise.all([
-    obterArvore(),
+  const [no, caminho] = await Promise.all([
     obterNo(noId),
     obterCaminhoBreadcrumb(noId),
   ])
@@ -54,21 +49,12 @@ export default async function NotePage({ params }: NotePageProps) {
   }
 
   return (
-    <GlobalShortcuts arvore={arvore} exigirPinBusca={politicas.exigirPinBusca}>
-      <SidebarProvider>
-        <div className="flex h-screen w-full overflow-hidden">
-          <AppSidebar arvore={arvore} activeId={noId} />
-          <div className="flex-1 flex flex-col min-w-0">
-            <NoteEditor
-              noId={no.id}
-              initialContent={no.conteudo || ""}
-              caminhoBreadcrumb={caminho}
-              exigirPinExportar={politicas.exigirPinExportar}
-              exigirPinUploadImagem={politicas.exigirPinUploadImagem}
-            />
-          </div>
-        </div>
-      </SidebarProvider>
-    </GlobalShortcuts>
+    <NoteEditor
+      noId={no.id}
+      initialContent={no.conteudo || ""}
+      caminhoBreadcrumb={caminho}
+      exigirPinExportar={politicas.exigirPinExportar}
+      exigirPinUploadImagem={politicas.exigirPinUploadImagem}
+    />
   )
 }

@@ -20,6 +20,7 @@
 .ProseMirror {
   outline: none;
   min-height: calc(100vh - 160px);
+  padding-bottom: 35vh;
   line-height: 1.6;
 }
 

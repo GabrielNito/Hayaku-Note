@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import {
   ChevronRight,
   MoreVertical,
@@ -282,6 +282,8 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
 
 export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const currentActiveId = activeId || pathname?.split("/").pop()
   const { resolvedTheme, setTheme } = useTheme()
   const mounted = React.useSyncExternalStore(
     () => () => {},
@@ -407,7 +409,7 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
           </div>
         ) : (
           filteredArvore.map((item) => (
-            <NoTreeNode key={item.id} item={item} activeId={activeId} />
+            <NoTreeNode key={item.id} item={item} activeId={currentActiveId} />
           ))
         )}
       </SidebarContent>
