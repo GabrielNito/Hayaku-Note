@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation"
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { uploadFiles } from "@/lib/uploadthing"
+import { Download } from "lucide-react"
 
 const lowlight = createLowlight(common)
 lowlight.register("javascript", js)
@@ -176,6 +177,27 @@ export function NoteEditor({
     setShowPinModal(true)
   }, [editor])
 
+  const handleExportMarkdown = React.useCallback(() => {
+    if (!editor) return
+
+    // @ts-expect-error getMarkdown
+    const markdown = editor.storage.markdown.getMarkdown() as string
+    const noteName = caminhoBreadcrumb.at(-1)?.nome || "nota"
+    const fileName = `${noteName
+      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "-")
+      .trim() || "nota"}.md`
+    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+
+    link.href = url
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }, [caminhoBreadcrumb, editor])
+
   // Whenever savedContent changes (switching notes), update editor content
   React.useEffect(() => {
     if (editor && savedContent) {
@@ -293,6 +315,17 @@ export function NoteEditor({
             className="h-7 text-xs font-sans px-2.5 disabled:opacity-50"
           >
             Salvar
+          </Button>
+
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="outline"
+            onClick={handleExportMarkdown}
+            aria-label="Exportar nota em Markdown"
+            title="Exportar em Markdown"
+          >
+            <Download />
           </Button>
         </div>
       </header>
