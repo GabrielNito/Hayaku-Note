@@ -109,7 +109,10 @@ Layout: sidebar (árvore completa, colapsável 100% com `Ctrl/Cmd+Shift+B`) + pa
 4. [x] Editor com autoformatação + syntax highlight + save manual (`Ctrl+S`/botão, com PIN) + indicador de estado + preservação exata de quebras de linha — **Concluído v1**
 5. [x] Toggle de tema light/dark — **Concluído v1**
 6. [x] Busca simples client-side por nome de arquivo/pasta — **Concluído v1**
-7. [ ] Drag-to-reorder dentro da mesma pasta (opcional, v2)
+7. [x] Paste de imagem com upload via Uploadthing (usando `file.ufsUrl`) — **Concluído v1**
+8. [x] Atalhos globais, Quick Open (`Ctrl+P`) e Command Bar (`Ctrl+Shift+P`) com suporte a CLI (`touch`, `mkdir`, `rm`, `cp`, `mv`) e Tab autocompletion — **Concluído v1**
+9. [x] Página/Dialog completa de Configurações e Políticas de Segurança granulares com Google Authenticator (TOTP) — **Concluído v1**
+10. [ ] Drag-to-reorder dentro da mesma pasta (opcional, v2)
 
 ## 8. Fora de escopo (de propósito)
 
