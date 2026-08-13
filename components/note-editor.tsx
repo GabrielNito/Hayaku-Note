@@ -7,6 +7,8 @@ import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
 import { Markdown } from "tiptap-markdown"
 import { CustomCodeBlock } from "@/components/extensions/code-block"
+import { CustomTableBlock } from "@/components/extensions/table"
+import { normalizeMarkdownTables } from "@/lib/markdown-table"
 import { ResizableImage } from "@/components/resizable-image"
 import { common, createLowlight } from "lowlight"
 import js from "highlight.js/lib/languages/javascript"
@@ -23,7 +25,7 @@ import { useRouter } from "next/navigation"
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { uploadFiles } from "@/lib/uploadthing"
-import { Download, Sparkles, Search, Terminal } from "lucide-react"
+import { Download, Sparkles, Search, Terminal, Table as TableIcon } from "lucide-react"
 import { liberarAcesso } from "@/actions/acesso"
 import { verificarAcessoChatAi } from "@/actions/configuracoes"
 import { DocumentChat } from "@/components/document-chat"
@@ -88,7 +90,8 @@ export function NoteEditor({
   const [pendingSaveContent, setPendingSaveContent] = React.useState("")
   const [prevNoId, setPrevNoId] = React.useState(noId)
   const [prevInitialContent, setPrevInitialContent] = React.useState(initialContent)
-  const [savedContent, setSavedContent] = React.useState(initialContent)
+  const normalizedInitial = React.useMemo(() => normalizeMarkdownTables(initialContent), [initialContent])
+  const [savedContent, setSavedContent] = React.useState(normalizedInitial)
   const [showExportPinModal, setShowExportPinModal] = React.useState(false)
   const [showImagePinModal, setShowImagePinModal] = React.useState(false)
   const [pendingImage, setPendingImage] = React.useState<File | null>(null)
@@ -98,7 +101,7 @@ export function NoteEditor({
   if (noId !== prevNoId) {
     setPrevNoId(noId)
     setPrevInitialContent(initialContent)
-    setSavedContent(initialContent)
+    setSavedContent(normalizeMarkdownTables(initialContent))
     setIsDirty(false)
     setLastSavedTime(null)
   }
@@ -125,6 +128,7 @@ export function NoteEditor({
       CustomCodeBlock.configure({
         lowlight,
       }),
+      CustomTableBlock,
       ResizableImage,
     ],
     content: savedContent,
@@ -379,6 +383,20 @@ export function NoteEditor({
             className="h-7 w-7"
           >
             <Terminal className="size-3.5" />
+          </Button>
+
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="outline"
+            onClick={() => {
+              editor?.chain().focus().insertTable(3, 3).run()
+            }}
+            aria-label="Inserir Tabela"
+            title="Inserir Tabela (3x3)"
+            className="h-7 w-7"
+          >
+            <TableIcon className="size-3.5" />
           </Button>
 
           <span className="text-xs font-mono text-muted-foreground transition-opacity duration-300 hidden sm:inline">
