@@ -6,7 +6,7 @@ import Paragraph from "@tiptap/extension-paragraph"
 import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
 import { Markdown } from "tiptap-markdown"
-import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight"
+import { CustomCodeBlock } from "@/components/extensions/code-block"
 import { ResizableImage } from "@/components/resizable-image"
 import { common, createLowlight } from "lowlight"
 import js from "highlight.js/lib/languages/javascript"
@@ -23,12 +23,14 @@ import { useRouter } from "next/navigation"
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { uploadFiles } from "@/lib/uploadthing"
-import { Download, Sparkles } from "lucide-react"
+import { Download, Sparkles, Search, Terminal } from "lucide-react"
 import { liberarAcesso } from "@/actions/acesso"
 import { verificarAcessoChatAi } from "@/actions/configuracoes"
 import { DocumentChat } from "@/components/document-chat"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
 
 const lowlight = createLowlight(common)
 lowlight.register("javascript", js)
@@ -79,6 +81,7 @@ export function NoteEditor({
 }: NoteEditorProps) {
   const router = useRouter()
   const { toggleSidebar } = useSidebar()
+  const isMobile = useIsMobile()
   const [isDirty, setIsDirty] = React.useState(false)
   const [lastSavedTime, setLastSavedTime] = React.useState<string | null>(null)
   const [showPinModal, setShowPinModal] = React.useState(false)
@@ -119,7 +122,7 @@ export function NoteEditor({
       Placeholder.configure({
         placeholder: "Comece a escrever...",
       }),
-      CodeBlockLowlight.configure({
+      CustomCodeBlock.configure({
         lowlight,
       }),
       ResizableImage,
@@ -335,24 +338,50 @@ export function NoteEditor({
       <header className="h-11 border-b border-border/60 flex items-center justify-between px-4 shrink-0 bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-2 overflow-hidden text-xs text-muted-foreground font-sans">
           <SidebarTrigger className="h-7 w-7 text-muted-foreground hover:text-foreground mr-1" />
-          {caminhoBreadcrumb.map((item, index) => (
-            <React.Fragment key={item.id}>
-              {index > 0 && <span className="text-border">/</span>}
-              <span
-                className={`truncate ${
-                  index === caminhoBreadcrumb.length - 1
-                    ? "text-foreground font-medium"
-                    : ""
-                }`}
-              >
-                {item.nome}
-              </span>
-            </React.Fragment>
-          ))}
+          <div className="hidden sm:flex items-center gap-2 overflow-hidden">
+            {caminhoBreadcrumb.map((item, index) => (
+              <React.Fragment key={item.id}>
+                {index > 0 && <span className="text-border">/</span>}
+                <span
+                  className={`truncate ${
+                    index === caminhoBreadcrumb.length - 1
+                      ? "text-foreground font-medium"
+                      : ""
+                  }`}
+                >
+                  {item.nome}
+                </span>
+              </React.Fragment>
+            ))}
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-mono text-muted-foreground transition-opacity duration-300">
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="outline"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-quick-open"))}
+            aria-label="Busca rápida (Quick Open)"
+            title="Busca Rápida (Ctrl+P)"
+            className="h-7 w-7"
+          >
+            <Search className="size-3.5" />
+          </Button>
+
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="outline"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-command-bar"))}
+            aria-label="Command Bar (CLI)"
+            title="Command Bar (Ctrl+Shift+P)"
+            className="h-7 w-7"
+          >
+            <Terminal className="size-3.5" />
+          </Button>
+
+          <span className="text-xs font-mono text-muted-foreground transition-opacity duration-300 hidden sm:inline">
             {isDirty
               ? "Alterações não salvas"
               : lastSavedTime
@@ -394,38 +423,36 @@ export function NoteEditor({
         </div>
       </header>
 
-      {/* Content area: editor + side chat with resizable panels */}
-      <div className="flex-1 flex flex-row min-h-0 overflow-hidden">
-        {isChatOpen ? (
-          <ResizablePanelGroup orientation="horizontal" className="flex-1 h-full">
-            <ResizablePanel defaultSize={60} minSize={30} className="flex flex-col h-full">
-              <ScrollArea className="flex-1 h-full">
-                <main className="px-4 py-8 pb-48 flex justify-center min-h-full">
-                  <div className="w-full max-w-180 font-sans text-foreground">
-                    <EditorContent editor={editor} />
-                  </div>
-                </main>
-              </ScrollArea>
-            </ResizablePanel>
+      {/* Content area: editor + side chat / mobile sheet */}
+      <div className="flex-1 flex flex-row min-h-0 overflow-hidden relative">
+        <ScrollArea className="flex-1 h-full w-full">
+          <main className="px-4 py-8 pb-48 flex justify-center min-h-full">
+            <div className="w-full max-w-180 font-sans text-foreground">
+              <EditorContent editor={editor} />
+            </div>
+          </main>
+        </ScrollArea>
 
-            <ResizableHandle withHandle />
-
-            <ResizablePanel defaultSize={40} minSize={25} className="flex flex-col h-full bg-background">
+        {isChatOpen && (
+          isMobile ? (
+            <Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
+              <SheetContent side="bottom" className="h-[80vh] p-0 flex flex-col bg-background">
+                <DocumentChat
+                  isOpen={isChatOpen}
+                  onClose={() => setIsChatOpen(false)}
+                  getDocumentContent={getDocumentContent}
+                />
+              </SheetContent>
+            </Sheet>
+          ) : (
+            <div className="w-[40%] h-full border-l border-border/60 bg-background flex flex-col">
               <DocumentChat
                 isOpen={isChatOpen}
                 onClose={() => setIsChatOpen(false)}
                 getDocumentContent={getDocumentContent}
               />
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        ) : (
-          <ScrollArea className="flex-1 h-full w-full">
-            <main className="px-4 py-8 flex justify-center min-h-full">
-              <div className="w-full max-w-180 font-sans text-foreground">
-                <EditorContent editor={editor} />
-              </div>
-            </main>
-          </ScrollArea>
+            </div>
+          )
         )}
       </div>
 
