@@ -1,19 +1,12 @@
 @layer base {
-  /* Custom neutro code block highlighting variables */
   :root {
-    --code-bg: oklch(0.97 0 0);
-    --code-fg: oklch(0.205 0 0);
-    --code-comment: oklch(0.556 0 0);
-    --code-keyword: oklch(0.205 0 0);
-    --code-string: oklch(0.35 0 0);
+    --code-bg: #f8fafc;
+    --code-fg: #0f172a;
   }
 
   .dark {
-    --code-bg: oklch(0.205 0 0);
-    --code-fg: oklch(0.985 0 0);
-    --code-comment: oklch(0.708 0 0);
-    --code-keyword: oklch(0.985 0 0);
-    --code-string: oklch(0.8 0 0);
+    --code-bg: #09090b;
+    --code-fg: #ffffff;
   }
 }
 
@@ -119,12 +112,12 @@
   margin: 2em 0;
 }
 
-/* Custom minimal code block lowlight styling */
+/* Custom code block styling with syntax highlighting */
 .ProseMirror pre {
   background: var(--code-bg);
   color: var(--code-fg);
   font-family: var(--font-mono), monospace;
-  padding: 0.75rem 1rem;
+  padding: 0;
   border-radius: var(--radius);
   margin: 1em 0;
   font-size: 0.85rem;
@@ -137,33 +130,38 @@
   font-size: 100%;
 }
 
+/* Base hljs color */
+.hljs {
+  color: var(--code-fg);
+}
+
+/* Palavras-chave (import, from) e delimitadores */
+.hljs-keyword,
+.hljs-punctuation,
+.hljs-tag .hljs-punctuation {
+  color: #71717a;
+}
+
+/* Nomes de Tags / Componentes JSX (<Message>, <Avatar>, etc.) */
+.hljs-tag,
+.hljs-tag .hljs-name,
+.hljs-title.class_ {
+  color: #e5884f;
+}
+
+/* Atributos HTML/JSX (src, alt, etc.) */
+.hljs-attr {
+  color: #a1a1aa;
+}
+
+/* Strings ("https://...", "@/components/...") */
+.hljs-string {
+  color: #3bbfa0;
+}
+
+/* Comentários */
 .hljs-comment,
 .hljs-quote {
-  color: var(--code-comment);
+  color: #71717a;
   font-style: italic;
-}
-
-.hljs-keyword,
-.hljs-selector-tag,
-.hljs-subst {
-  color: var(--code-keyword);
-  font-weight: 500;
-}
-
-.hljs-string,
-.hljs-title,
-.hljs-section,
-.hljs-attribute,
-.hljs-literal,
-.hljs-template-tag,
-.hljs-template-variable,
-.hljs-type,
-.hljs-addition {
-  color: var(--code-string);
-}
-
-.hljs-number,
-.hljs-regexp,
-.hljs-link {
-  color: inherit;
 }
