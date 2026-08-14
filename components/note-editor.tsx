@@ -29,6 +29,7 @@ import { Download, Sparkles, Search, Terminal, Table as TableIcon } from "lucide
 import { liberarAcesso } from "@/actions/acesso"
 import { verificarAcessoChatAi } from "@/actions/configuracoes"
 import { DocumentChat } from "@/components/document-chat"
+import { AiProposalBlock } from "@/components/extensions/ai-proposal-block"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -130,6 +131,7 @@ export function NoteEditor({
       }),
       CustomTableBlock,
       ResizableImage,
+      AiProposalBlock,
     ],
     content: savedContent,
     editorProps: {
@@ -336,6 +338,150 @@ export function NoteEditor({
     return (editor.storage.markdown.getMarkdown() as string) || initialContent
   }, [editor, initialContent])
 
+  const handleProposeEdit = React.useCallback(
+    (
+      proposedContent: string,
+      summary?: string,
+      originalSnippet?: string,
+      position?: string
+    ) => {
+      if (!editor) return
+
+      setTimeout(() => {
+        let originalContent = originalSnippet?.trim() || ""
+        const docSize = editor.state.doc.content.size
+
+        if (position === "end") {
+          editor
+            .chain()
+            .focus()
+            .insertContentAt(docSize, {
+              type: "aiProposalBlock",
+              attrs: {
+                originalContent,
+                proposedContent,
+                summary: summary || "Adicionado no final do documento",
+              },
+            })
+            .run()
+          return
+        }
+
+        if (position === "start") {
+          editor
+            .chain()
+            .focus()
+            .insertContentAt(0, {
+              type: "aiProposalBlock",
+              attrs: {
+                originalContent,
+                proposedContent,
+                summary: summary || "Adicionado no início do documento",
+              },
+            })
+            .run()
+          return
+        }
+
+        // Se originalContent for fornecido, busca no documento a seção correspondente (cabeçalho + conteúdo filho) para substituir no local exato (in-place)
+        if (originalContent) {
+          let targetRange: { from: number; to: number; origText: string } | null = null
+          const clean = originalContent.trim().toLowerCase()
+          const doc = editor.state.doc
+
+          let startPos: number | null = null
+          let endPos: number | null = null
+          let isHeadingSection = false
+          let found = false
+
+          doc.forEach((node: any, offset: number) => {
+            if (found && isHeadingSection) {
+              if (node.type.name === "heading") {
+                isHeadingSection = false
+                return
+              }
+              endPos = offset + node.nodeSize
+              return
+            }
+
+            if (!found && node.isBlock && node.textContent) {
+              const text = node.textContent.trim().toLowerCase()
+              if (text && (text.includes(clean) || clean.includes(text))) {
+                found = true
+                startPos = offset
+                endPos = offset + node.nodeSize
+                if (node.type.name === "heading") {
+                  isHeadingSection = true
+                }
+              }
+            }
+          })
+
+          if (startPos !== null && endPos !== null) {
+            targetRange = {
+              from: startPos,
+              to: endPos,
+              origText: doc.textBetween(startPos, endPos, "\n"),
+            }
+          }
+
+          if (targetRange) {
+            const range = targetRange
+            const actualOriginal = range.origText || originalContent
+            editor
+              .chain()
+              .focus()
+              .deleteRange({ from: range.from, to: range.to })
+              .insertContentAt(range.from, {
+                type: "aiProposalBlock",
+                attrs: {
+                  originalContent: actualOriginal,
+                  proposedContent,
+                  summary: summary || "Proposta da IA",
+                },
+              })
+              .run()
+            return
+          }
+        }
+
+        const { from, to } = editor.state.selection
+        const hasSelection = from !== to
+
+        if (hasSelection && !originalContent) {
+          originalContent = editor.state.doc.textBetween(from, to, "\n")
+          editor
+            .chain()
+            .focus()
+            .deleteRange({ from, to })
+            .insertContentAt(from, {
+              type: "aiProposalBlock",
+              attrs: {
+                originalContent,
+                proposedContent,
+                summary: summary || "Proposta da IA",
+              },
+            })
+            .run()
+        } else {
+          editor
+            .chain()
+            .focus()
+            .insertContent({
+              type: "aiProposalBlock",
+              attrs: {
+                originalContent,
+                proposedContent,
+                summary: summary || "Proposta da IA",
+              },
+            })
+            .run()
+        }
+      }, 0)
+    },
+    [editor]
+  )
+
   return (
     <div className="flex flex-col h-screen w-full bg-background overflow-hidden">
       {/* Top fine bar: breadcrumb + save status */}
@@ -459,6 +605,7 @@ export function NoteEditor({
                   isOpen={isChatOpen}
                   onClose={() => setIsChatOpen(false)}
                   getDocumentContent={getDocumentContent}
+                  onProposeEdit={handleProposeEdit}
                 />
               </SheetContent>
             </Sheet>
@@ -468,6 +615,7 @@ export function NoteEditor({
                 isOpen={isChatOpen}
                 onClose={() => setIsChatOpen(false)}
                 getDocumentContent={getDocumentContent}
+                onProposeEdit={handleProposeEdit}
               />
             </div>
           )
