@@ -11,6 +11,7 @@ import {
   Edit2,
   FolderPlus,
   FilePlus,
+  FileUp,
 } from "lucide-react"
 import { useTheme } from "@/components/theme-provider"
 import { criarNo, renomearNo, deletarNo } from "@/actions/no"
@@ -49,6 +50,9 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
   const router = useRouter()
   const [isOpen, setIsOpen] = React.useState(true)
 
+  const isActive = activeId === item.id
+  const isPasta = item.tipo === TipoNo.PASTA
+
   // Dialog states
   const [dialogAction, setDialogAction] = React.useState<
     "criarPasta" | "criarArquivo" | "renomear" | "deletar" | null
@@ -56,12 +60,40 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
   const [inputValue, setInputValue] = React.useState("")
   const [showPinModal, setShowPinModal] = React.useState(false)
   const [pendingActionData, setPendingActionData] = React.useState<{
-    action: "criarPasta" | "criarArquivo" | "renomear" | "deletar" | null
+    action: "criarPasta" | "criarArquivo" | "renomear" | "deletar" | "importar" | null
     payload: string
+    filesData?: { nome: string; conteudo: string }[]
   } | null>(null)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-  const isActive = activeId === item.id
-  const isPasta = item.tipo === TipoNo.PASTA
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    Promise.all(
+      files.map((file) => {
+        return new Promise<{ nome: string; conteudo: string }>((resolve) => {
+          const reader = new FileReader()
+          reader.onload = (event) => {
+            const conteudo = (event.target?.result as string) || ""
+            const nome = file.name.replace(/\.(md|markdown)$/i, "")
+            resolve({ nome, conteudo })
+          }
+          reader.readAsText(file)
+        })
+      })
+    ).then((filesData) => {
+      setPendingActionData({
+        action: "importar",
+        payload: "",
+        filesData,
+      })
+      setShowPinModal(true)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    })
+  }
 
   function handleOpenCreateModal(tipo: string) {
     setInputValue("")
@@ -100,6 +132,8 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
     if (!pendingActionData) return
 
     let res: { success: boolean; error?: string; id?: string } | undefined
+    let firstId: string | undefined
+
     if (pendingActionData.action === "criarPasta") {
       res = await criarNo(pin, {
         nome: pendingActionData.payload,
@@ -117,6 +151,22 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
       res = await renomearNo(pin, item.id, pendingActionData.payload)
     } else if (pendingActionData.action === "deletar") {
       res = await deletarNo(pin, item.id)
+    } else if (pendingActionData.action === "importar" && pendingActionData.filesData) {
+      for (const fileData of pendingActionData.filesData) {
+        const importRes = await criarNo(pin, {
+          nome: fileData.nome,
+          tipo: TipoNo.ARQUIVO,
+          paiId: item.id,
+          conteudo: fileData.conteudo,
+        })
+        if (!importRes.success) {
+          throw new Error(importRes.error || "Erro ao importar arquivo.")
+        }
+        if (!firstId && importRes.id) {
+          firstId = importRes.id
+        }
+      }
+      res = { success: true, id: firstId }
     }
 
     if (res && !res.success) {
@@ -181,6 +231,17 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
                   <DropdownMenuItem onClick={() => handleOpenCreateModal(TipoNo.PASTA)}>
                     <FolderPlus className="size-3.5 mr-2" /> Nova Pasta
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                    <FileUp className="size-3.5 mr-2" /> Importar .md
+                  </DropdownMenuItem>
+                  <input
+                    type="file"
+                    accept=".md,.markdown"
+                    multiple
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
                 </>
               )}
               <DropdownMenuItem onClick={handleOpenRenameModal}>
@@ -297,9 +358,40 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
   const [rootInputValue, setRootInputValue] = React.useState("")
   const [showRootPinModal, setShowRootPinModal] = React.useState(false)
   const [rootPendingData, setRootPendingData] = React.useState<{
-    action: "criarPasta" | "criarArquivo" | null
+    action: "criarPasta" | "criarArquivo" | "importar" | null
     payload: string
+    filesData?: { nome: string; conteudo: string }[]
   } | null>(null)
+  const rootFileInputRef = React.useRef<HTMLInputElement>(null)
+
+  function handleRootFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    Promise.all(
+      files.map((file) => {
+        return new Promise<{ nome: string; conteudo: string }>((resolve) => {
+          const reader = new FileReader()
+          reader.onload = (event) => {
+            const conteudo = (event.target?.result as string) || ""
+            const nome = file.name.replace(/\.(md|markdown)$/i, "")
+            resolve({ nome, conteudo })
+          }
+          reader.readAsText(file)
+        })
+      })
+    ).then((filesData) => {
+      setRootPendingData({
+        action: "importar",
+        payload: "",
+        filesData,
+      })
+      setShowRootPinModal(true)
+      if (rootFileInputRef.current) {
+        rootFileInputRef.current.value = ""
+      }
+    })
+  }
 
   function handleRootSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -316,12 +408,33 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
   async function executeRootPinAction(pin: string) {
     if (!rootPendingData) return
 
-    const res = await criarNo(pin, {
-      nome: rootPendingData.payload,
-      tipo: rootPendingData.action === "criarPasta" ? TipoNo.PASTA : TipoNo.ARQUIVO,
-      paiId: null,
-      conteudo: "",
-    })
+    let res: { success: boolean; error?: string; id?: string } | undefined
+    let firstId: string | undefined
+
+    if (rootPendingData.action === "importar" && rootPendingData.filesData) {
+      for (const fileData of rootPendingData.filesData) {
+        const importRes = await criarNo(pin, {
+          nome: fileData.nome,
+          tipo: TipoNo.ARQUIVO,
+          paiId: null,
+          conteudo: fileData.conteudo,
+        })
+        if (!importRes.success) {
+          throw new Error(importRes.error || "Erro ao importar arquivo na raiz.")
+        }
+        if (!firstId && importRes.id) {
+          firstId = importRes.id
+        }
+      }
+      res = { success: true, id: firstId }
+    } else {
+      res = await criarNo(pin, {
+        nome: rootPendingData.payload,
+        tipo: rootPendingData.action === "criarPasta" ? TipoNo.PASTA : TipoNo.ARQUIVO,
+        paiId: null,
+        conteudo: "",
+      })
+    }
 
     if (!res.success) {
       throw new Error(res.error || "Erro na operação.")
@@ -367,6 +480,21 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
             Hayaku Note
           </Link>
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => rootFileInputRef.current?.click()}
+              title="Importar .md na Raiz"
+              className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground"
+            >
+              <FileUp className="size-3.5" />
+            </button>
+            <input
+              type="file"
+              accept=".md,.markdown"
+              multiple
+              ref={rootFileInputRef}
+              onChange={handleRootFileChange}
+              className="hidden"
+            />
             <button
               onClick={() => {
                 setRootInputValue("")
