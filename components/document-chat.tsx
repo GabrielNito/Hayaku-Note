@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,6 +28,14 @@ interface DocumentChatProps {
   onClose: () => void;
   getDocumentContent: () => string;
   onProposeEdit?: (proposedContent: string, summary?: string, originalSnippet?: string, position?: string) => void;
+  provider: Provider;
+  setProvider: (p: Provider) => void;
+  model: string;
+  setModel: (m: string) => void;
+  messages: any[];
+  sendMessage: (message: { text: string }, options?: any) => Promise<any>;
+  status: string;
+  error: any;
 }
 
 type Provider = "google" | "openai" | "anthropic";
@@ -59,10 +65,21 @@ const providerNames: Record<Provider, string> = {
   anthropic: "Anthropic Claude",
 };
 
-export function DocumentChat({ isOpen, onClose, getDocumentContent, onProposeEdit }: DocumentChatProps) {
+export function DocumentChat({
+  isOpen,
+  onClose,
+  getDocumentContent,
+  onProposeEdit,
+  provider,
+  setProvider,
+  model,
+  setModel,
+  messages,
+  sendMessage,
+  status,
+  error,
+}: DocumentChatProps) {
   const [configuredKeys, setConfiguredKeys] = useState<{ google: boolean; openai: boolean; anthropic: boolean } | null>(null);
-  const [provider, setProvider] = useState<Provider>("google");
-  const [model, setModel] = useState<string>("gemini-3.5-flash");
   const [input, setInput] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -79,20 +96,7 @@ export function DocumentChat({ isOpen, onClose, getDocumentContent, onProposeEdi
         })
         .catch(() => {});
     }
-  }, [isOpen]);
-
-  const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-      headers: {
-        "x-provider": provider,
-        "x-model": model,
-      },
-      body: {
-        documentContent: getDocumentContent(),
-      },
-    }),
-  });
+  }, [isOpen, provider, setProvider, setModel]);
 
   const processedProposalIdsRef = useRef<Set<string>>(new Set());
 

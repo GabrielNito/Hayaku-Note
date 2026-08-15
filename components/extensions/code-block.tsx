@@ -87,9 +87,9 @@ const CodeBlockComponent = ({ node, updateAttributes }: { node: any; updateAttri
       </div>
 
       {/* Code content area */}
-      <div className="p-4 overflow-x-auto">
-        <pre className="m-0 bg-transparent p-0 font-mono text-xs text-[var(--code-fg)] leading-relaxed">
-          <NodeViewContent />
+      <div className="p-4 overflow-x-auto max-w-full">
+        <pre className="m-0 bg-transparent p-0 font-mono text-xs text-[var(--code-fg)] leading-relaxed whitespace-pre !whitespace-pre">
+          <NodeViewContent className="outline-none whitespace-pre !whitespace-pre block" />
         </pre>
       </div>
     </NodeViewWrapper>
