@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import { useEditor, EditorContent } from "@tiptap/react"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport } from "ai"
 import Paragraph from "@tiptap/extension-paragraph"
 import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
@@ -30,10 +32,10 @@ import { liberarAcesso } from "@/actions/acesso"
 import { verificarAcessoChatAi } from "@/actions/configuracoes"
 import { DocumentChat } from "@/components/document-chat"
 import { AiProposalBlock } from "@/components/extensions/ai-proposal-block"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 const lowlight = createLowlight(common)
 lowlight.register("javascript", js)
@@ -98,6 +100,8 @@ export function NoteEditor({
   const [pendingImage, setPendingImage] = React.useState<File | null>(null)
   const [isChatOpen, setIsChatOpen] = React.useState(false)
   const [showAiPinModal, setShowAiPinModal] = React.useState(false)
+  const [chatProvider, setChatProvider] = React.useState<"google" | "openai" | "anthropic">("google")
+  const [chatModel, setChatModel] = React.useState<string>("gemini-3.5-flash")
 
   if (noId !== prevNoId) {
     setPrevNoId(noId)
@@ -182,6 +186,25 @@ export function NoteEditor({
       const markdown = editor.storage.markdown.getMarkdown() as string
       setIsDirty(markdown !== savedContent)
     },
+  })
+
+  const getDocumentContent = React.useCallback(() => {
+    if (!editor) return initialContent
+    // @ts-expect-error getMarkdown
+    return (editor.storage.markdown.getMarkdown() as string) || initialContent
+  }, [editor, initialContent])
+
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      headers: {
+        "x-provider": chatProvider,
+        "x-model": chatModel,
+      },
+      body: {
+        documentContent: getDocumentContent(),
+      },
+    }),
   })
 
   function enviarImagem(file: File) {
@@ -331,12 +354,6 @@ export function NoteEditor({
     )
     setShowPinModal(false)
   }
-
-  const getDocumentContent = React.useCallback(() => {
-    if (!editor) return initialContent
-    // @ts-expect-error getMarkdown
-    return (editor.storage.markdown.getMarkdown() as string) || initialContent
-  }, [editor, initialContent])
 
   const handleProposeEdit = React.useCallback(
     (
@@ -589,36 +606,66 @@ export function NoteEditor({
 
       {/* Content area: editor + side chat / mobile sheet */}
       <div className="flex-1 flex flex-row min-h-0 overflow-hidden relative">
-        <ScrollArea className="flex-1 h-full w-full">
-          <main className="px-4 py-8 pb-48 flex justify-center min-h-full">
-            <div className="w-full max-w-180 font-sans text-foreground">
-              <EditorContent editor={editor} />
-            </div>
-          </main>
-        </ScrollArea>
-
-        {isChatOpen && (
-          isMobile ? (
-            <Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
-              <SheetContent side="bottom" className="h-[80vh] p-0 flex flex-col bg-background">
+        {isChatOpen && !isMobile ? (
+          <ResizablePanelGroup orientation="horizontal" className="h-full w-full">
+            <ResizablePanel defaultSize={60} minSize={30}>
+              <ScrollArea className="h-full w-full">
+                <main className="px-4 py-8 pb-48 flex justify-center min-h-full w-full box-border">
+                  <div className="w-full max-w-180 font-sans text-foreground">
+                    <EditorContent editor={editor} />
+                  </div>
+                </main>
+              </ScrollArea>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={40} minSize={20}>
+              <div className="h-full w-full bg-background flex flex-col">
                 <DocumentChat
                   isOpen={isChatOpen}
                   onClose={() => setIsChatOpen(false)}
                   getDocumentContent={getDocumentContent}
                   onProposeEdit={handleProposeEdit}
+                  provider={chatProvider}
+                  setProvider={setChatProvider}
+                  model={chatModel}
+                  setModel={setChatModel}
+                  messages={messages}
+                  sendMessage={sendMessage}
+                  status={status}
+                  error={error}
                 />
-              </SheetContent>
-            </Sheet>
-          ) : (
-            <div className="w-[40%] h-full border-l border-border/60 bg-background flex flex-col">
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        ) : (
+          <ScrollArea className="h-full w-full">
+            <main className="px-4 py-8 pb-48 flex justify-center min-h-full w-full box-border">
+              <div className="w-full max-w-180 font-sans text-foreground">
+                <EditorContent editor={editor} />
+              </div>
+            </main>
+          </ScrollArea>
+        )}
+
+        {isChatOpen && isMobile && (
+          <Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
+            <SheetContent side="bottom" className="h-[80vh] max-h-[80vh] p-0 flex flex-col bg-background" showCloseButton={false}>
               <DocumentChat
                 isOpen={isChatOpen}
                 onClose={() => setIsChatOpen(false)}
                 getDocumentContent={getDocumentContent}
                 onProposeEdit={handleProposeEdit}
+                provider={chatProvider}
+                setProvider={setChatProvider}
+                model={chatModel}
+                setModel={setChatModel}
+                messages={messages}
+                sendMessage={sendMessage}
+                status={status}
+                error={error}
               />
-            </div>
-          )
+            </SheetContent>
+          </Sheet>
         )}
       </div>
 
