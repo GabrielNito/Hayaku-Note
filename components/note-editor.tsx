@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useEditor, EditorContent } from "@tiptap/react"
+import { useEditor, EditorContent, NodeViewWrapper, NodeViewContent, ReactNodeViewRenderer } from "@tiptap/react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import Paragraph from "@tiptap/extension-paragraph"
@@ -10,6 +10,9 @@ import Code from "@tiptap/extension-code"
 import { markInputRule } from "@tiptap/core"
 import Placeholder from "@tiptap/extension-placeholder"
 import { Markdown } from "tiptap-markdown"
+import TaskList from "@tiptap/extension-task-list"
+import TaskItem from "@tiptap/extension-task-item"
+import { Checkbox } from "@/components/ui/checkbox"
 
 const CustomCode = Code.extend({
   addInputRules() {
@@ -19,6 +22,33 @@ const CustomCode = Code.extend({
         type: this.type,
       }),
     ]
+  },
+})
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const TaskItemComponent = ({ node, updateAttributes }: { node: any; updateAttributes: (attrs: any) => void }) => {
+  const isChecked = node.attrs.checked
+
+  return (
+    <NodeViewWrapper as="li" data-checked={isChecked} className="flex items-center gap-2 my-1">
+      <label contentEditable={false} className="select-none flex items-center">
+        <Checkbox
+          checked={isChecked}
+          onCheckedChange={(checked) => {
+            updateAttributes({ checked: Boolean(checked) })
+          }}
+        />
+      </label>
+      <div className={`flex-1 ${isChecked ? "line-through text-muted-foreground" : ""}`}>
+        <NodeViewContent className="outline-none" />
+      </div>
+    </NodeViewWrapper>
+  )
+}
+
+const CustomTaskItem = TaskItem.extend({
+  addNodeView() {
+    return ReactNodeViewRenderer(TaskItemComponent)
   },
 })
 import { CustomCodeBlock } from "@/components/extensions/code-block"
@@ -175,6 +205,10 @@ export function NoteEditor({
       CustomTableBlock,
       ResizableImage,
       AiProposalBlock,
+      TaskList,
+      CustomTaskItem.configure({
+        nested: true,
+      }),
     ],
     content: savedContent,
     editorProps: {

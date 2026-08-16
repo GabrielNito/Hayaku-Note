@@ -193,3 +193,48 @@
   color: #71717a;
   font-style: italic;
 }
+
+/* Task List / Checkbox styling */
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+  margin: 0.5em 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.ProseMirror ul[data-type="taskList"] li p {
+  margin: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li > label {
+  user-select: none;
+  margin-right: 0.2rem;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.2em;
+}
+
+.ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] {
+  cursor: pointer;
+  appearance: auto;
+  accent-color: var(--primary);
+  width: 1rem;
+  height: 1rem;
+  border-radius: calc(var(--radius) * 0.5);
+}
+
+.ProseMirror ul[data-type="taskList"] li > div {
+  flex: 1;
+}
+
+.ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
+  text-decoration: line-through;
+  color: var(--muted-foreground);
+}
