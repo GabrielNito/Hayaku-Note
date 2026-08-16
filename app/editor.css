@@ -15,6 +15,14 @@
   min-height: calc(100vh - 160px);
   padding-bottom: 35vh;
   line-height: 1.6;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.ProseMirror * {
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {
@@ -122,9 +130,21 @@
   margin: 1em 0;
   font-size: 0.85rem;
   overflow-x: auto;
+  max-width: 100%;
+  box-sizing: border-box;
   white-space: pre !important;
   word-break: normal !important;
   overflow-wrap: normal !important;
+}
+
+.ProseMirror code:not(pre code) {
+  background: var(--code-bg);
+  color: var(--code-fg);
+  font-family: var(--font-mono), monospace;
+  padding: 0.2em 0.4em;
+  border-radius: calc(var(--radius) * 0.75);
+  font-size: 0.85em;
+  border: 1px solid var(--border);
 }
 
 .ProseMirror pre code,

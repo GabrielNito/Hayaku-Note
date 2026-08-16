@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { validarPin } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
-import { NoItem } from "./types"
+import { NoItem, TipoNo } from "./types"
 import { UTApi } from "uploadthing/server"
 
 const utapi = new UTApi()
@@ -24,7 +24,7 @@ function extractUploadThingKeys(content: string | null): string[] {
 export async function obterArvore(): Promise<NoItem[]> {
   try {
     const todos = await prisma.no.findMany({
-      orderBy: [{ ordem: "asc" }, { nome: "asc" }],
+      orderBy: [{ nome: "asc" }, { ordem: "asc" }],
     })
 
     const mapa = new Map<string, NoItem>()
@@ -48,7 +48,17 @@ export async function obterArvore(): Promise<NoItem[]> {
       }
     }
 
-    return raizes
+    const sortNodes = (nodes: NoItem[]): NoItem[] => {
+      const folders = nodes.filter((n) => n.tipo === TipoNo.PASTA).sort((a, b) => a.nome.localeCompare(b.nome, undefined, { sensitivity: 'accent', numeric: true }))
+      const files = nodes.filter((n) => n.tipo === TipoNo.ARQUIVO).sort((a, b) => a.nome.localeCompare(b.nome, undefined, { sensitivity: 'accent', numeric: true }))
+      
+      return [...folders, ...files].map((node) => ({
+        ...node,
+        filhos: node.filhos ? sortNodes(node.filhos) : [],
+      }))
+    }
+
+    return sortNodes(raizes)
   } catch (err) {
     console.error("Erro ao obter arvore:", err)
     return []

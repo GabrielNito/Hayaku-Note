@@ -6,7 +6,13 @@ import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2, Copy, Check, Table as TableIcon, Code } from "lucide-react"
+import { Plus, Trash2, Copy, Check, Table as TableIcon, Code, MoreVertical } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { parseMarkdownTable, serializeMarkdownTable, TableData } from "@/lib/markdown-table"
 
 function generateTableMarkdown(rowsCount = 3, colsCount = 3): string {
@@ -20,13 +26,20 @@ const TableBlockComponent = ({ node, updateAttributes, deleteNode }: { node: any
   const [activeTab, setActiveTab] = React.useState<string>("visual")
   const [copied, setCopied] = React.useState(false)
 
-  const rawMarkdown = node.attrs.markdown || "| Coluna 1 | Coluna 2 |\n|---|---|\n| Valor 1 | Valor 2 |"
-  const tableData: TableData = React.useMemo(() => {
-    return parseMarkdownTable(rawMarkdown)
-  }, [rawMarkdown])
+  const initialMarkdown = node.attrs.markdown || "| Coluna 1 | Coluna 2 |\n|---|---|\n| Valor 1 | Valor 2 |"
+  const [tableData, setTableData] = React.useState<TableData>(() => parseMarkdownTable(initialMarkdown))
+  const [rawMarkdown, setRawMarkdown] = React.useState<string>(initialMarkdown)
 
-  const updateTableData = (newData: TableData) => {
+  React.useEffect(() => {
+    const md = node.attrs.markdown || "| Coluna 1 | Coluna 2 |\n|---|---|\n| Valor 1 | Valor 2 |"
+    setTableData(parseMarkdownTable(md))
+    setRawMarkdown(md)
+  }, [node.attrs.markdown])
+
+  const commitTableData = (newData: TableData) => {
     const newMarkdown = serializeMarkdownTable(newData)
+    setTableData(newData)
+    setRawMarkdown(newMarkdown)
     updateAttributes({ markdown: newMarkdown })
   }
 
@@ -37,42 +50,60 @@ const TableBlockComponent = ({ node, updateAttributes, deleteNode }: { node: any
       }
       return row
     })
-    updateTableData({ headers: tableData.headers, rows: updatedRows })
+    setTableData({ headers: tableData.headers, rows: updatedRows })
+  }
+
+  const handleCellBlur = () => {
+    commitTableData(tableData)
   }
 
   const handleHeaderChange = (colIndex: number, value: string) => {
     const updatedHeaders = tableData.headers.map((h, idx) => (idx === colIndex ? value : h))
-    updateTableData({ headers: updatedHeaders, rows: tableData.rows })
+    setTableData({ headers: updatedHeaders, rows: tableData.rows })
+  }
+
+  const handleHeaderBlur = () => {
+    commitTableData(tableData)
   }
 
   const addRow = () => {
     const emptyRow = tableData.headers.map(() => "")
-    updateTableData({ headers: tableData.headers, rows: [...tableData.rows, emptyRow] })
+    commitTableData({ headers: tableData.headers, rows: [...tableData.rows, emptyRow] })
   }
 
   const addColumn = () => {
     const newColIndex = tableData.headers.length + 1
     const updatedHeaders = [...tableData.headers, `Coluna ${newColIndex}`]
     const updatedRows = tableData.rows.map((row) => [...row, ""])
-    updateTableData({ headers: updatedHeaders, rows: updatedRows })
+    commitTableData({ headers: updatedHeaders, rows: updatedRows })
   }
 
   const removeRow = (rowIndex: number) => {
     if (tableData.rows.length <= 1) return
     const updatedRows = tableData.rows.filter((_, idx) => idx !== rowIndex)
-    updateTableData({ headers: tableData.headers, rows: updatedRows })
+    commitTableData({ headers: tableData.headers, rows: updatedRows })
   }
 
   const removeColumn = (colIndex: number) => {
     if (tableData.headers.length <= 1) return
     const updatedHeaders = tableData.headers.filter((_, idx) => idx !== colIndex)
     const updatedRows = tableData.rows.map((row) => row.filter((_, idx) => idx !== colIndex))
-    updateTableData({ headers: updatedHeaders, rows: updatedRows })
+    commitTableData({ headers: updatedHeaders, rows: updatedRows })
+  }
+
+  const handleRawChange = (value: string) => {
+    setRawMarkdown(value)
+  }
+
+  const handleRawBlur = () => {
+    const parsed = parseMarkdownTable(rawMarkdown)
+    setTableData(parsed)
+    updateAttributes({ markdown: rawMarkdown })
   }
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(rawMarkdown)
+      await navigator.clipboard.writeText(serializeMarkdownTable(tableData))
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
@@ -93,93 +124,73 @@ const TableBlockComponent = ({ node, updateAttributes, deleteNode }: { node: any
               </TabsTrigger>
               <TabsTrigger value="raw" className="h-5 px-2 text-xs gap-1">
                 <Code className="size-3" />
-                <span>Markdown</span>
+                <span className="hidden sm:inline">Markdown</span>
+                <span className="sm:hidden">MD</span>
               </TabsTrigger>
             </TabsList>
           </div>
 
           <div className="flex items-center gap-1.5">
-            {activeTab === "visual" && (
-              <>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  onClick={addRow}
-                  className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
-                  title="Adicionar linha"
+            <DropdownMenu>
+              <DropdownMenuTrigger className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded flex items-center justify-center cursor-pointer outline-none">
+                <MoreVertical className="size-3.5" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44 font-sans text-xs">
+                {activeTab === "visual" && (
+                  <>
+                    <DropdownMenuItem onClick={addRow} className="cursor-pointer">
+                      <Plus className="size-3.5 mr-2" /> Adicionar Linha
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={addColumn} className="cursor-pointer">
+                      <Plus className="size-3.5 mr-2" /> Adicionar Coluna
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuItem onClick={handleCopy} className="cursor-pointer">
+                  {copied ? (
+                    <>
+                      <Check className="size-3.5 mr-2 text-green-500" />
+                      <span className="text-green-500">Copiado</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="size-3.5 mr-2" /> Copiar Markdown
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={deleteNode}
+                  className="cursor-pointer text-destructive focus:text-destructive"
                 >
-                  <Plus className="size-3" />
-                  <span>Linha</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  onClick={addColumn}
-                  className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
-                  title="Adicionar coluna"
-                >
-                  <Plus className="size-3" />
-                  <span>Coluna</span>
-                </Button>
-              </>
-            )}
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              onClick={handleCopy}
-              className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
-              title="Copiar markdown"
-            >
-              {copied ? (
-                <>
-                  <Check className="size-3 text-green-500" />
-                  <span className="text-green-500">Copiado</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="size-3" />
-                  <span>Copiar</span>
-                </>
-              )}
-            </Button>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="xs"
-              onClick={deleteNode}
-              className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-destructive"
-              title="Deletar tabela"
-            >
-              <Trash2 className="size-3" />
-              <span>Deletar</span>
-            </Button>
+                  <Trash2 className="size-3.5 mr-2" /> Deletar Tabela
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
         {/* Visual Tab */}
         <TabsContent value="visual" className="p-3 m-0 overflow-x-auto">
-          <Table>
+          <Table className="w-max min-w-full table-auto">
             <TableHeader>
               <TableRow>
                 {tableData.headers.map((header, cIdx) => (
-                  <TableHead key={cIdx} className="relative group/head">
-                    <div className="flex items-center justify-between gap-1">
+                  <TableHead key={cIdx} className="relative group/head whitespace-nowrap">
+                    <div className="flex items-center justify-between gap-2">
                       <input
                         type="text"
                         value={header}
                         onChange={(e) => handleHeaderChange(cIdx, e.target.value)}
-                        className="bg-transparent border-0 font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 rounded px-1 w-full text-xs"
+                        onBlur={handleHeaderBlur}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        style={{ width: `${Math.max(12, (header || "").length + 4)}ch` }}
+                        className="bg-transparent border-0 font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 rounded px-1 text-xs whitespace-nowrap"
                       />
                       {tableData.headers.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeColumn(cIdx)}
-                          className="opacity-0 group-hover/head:opacity-100 text-muted-foreground hover:text-destructive p-0.5 rounded transition-opacity"
+                          className="opacity-0 group-hover/head:opacity-100 text-muted-foreground hover:text-destructive p-0.5 rounded transition-opacity shrink-0"
                           title="Remover coluna"
                         >
                           <Trash2 className="size-3" />
@@ -195,12 +206,15 @@ const TableBlockComponent = ({ node, updateAttributes, deleteNode }: { node: any
               {tableData.rows.map((row, rIdx) => (
                 <TableRow key={rIdx} className="group/row">
                   {row.map((cell, cIdx) => (
-                    <TableCell key={cIdx}>
+                    <TableCell key={cIdx} className="whitespace-nowrap">
                       <input
                         type="text"
                         value={cell}
                         onChange={(e) => handleCellChange(rIdx, cIdx, e.target.value)}
-                        className="bg-transparent border-0 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 rounded px-1 w-full text-xs font-sans"
+                        onBlur={handleCellBlur}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        style={{ width: `${Math.max(12, (cell || "").length + 4)}ch` }}
+                        className="bg-transparent border-0 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 rounded px-1 text-xs font-sans whitespace-nowrap"
                         placeholder="..."
                       />
                     </TableCell>
@@ -227,7 +241,9 @@ const TableBlockComponent = ({ node, updateAttributes, deleteNode }: { node: any
         <TabsContent value="raw" className="p-4 m-0 bg-[var(--code-bg)]">
           <textarea
             value={rawMarkdown}
-            onChange={(e) => updateAttributes({ markdown: e.target.value })}
+            onChange={(e) => handleRawChange(e.target.value)}
+            onBlur={handleRawBlur}
+            onKeyDown={(e) => e.stopPropagation()}
             className="w-full h-36 bg-transparent font-mono text-xs text-[var(--code-fg)] resize-y outline-none focus:ring-0 border-0"
             spellCheck={false}
           />
@@ -314,7 +330,9 @@ export const CustomTableBlock = Node.create({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(TableBlockComponent)
+    return ReactNodeViewRenderer(TableBlockComponent, {
+      stopEvent: () => true,
+    })
   },
 })
 

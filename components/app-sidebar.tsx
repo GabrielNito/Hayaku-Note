@@ -12,8 +12,11 @@ import {
   FolderPlus,
   FilePlus,
   FileUp,
+  Folder,
+  FolderOpen,
 } from "lucide-react"
 import { useTheme } from "@/components/theme-provider"
+import { navigateWith } from "@/lib/navigation"
 import { criarNo, renomearNo, deletarNo } from "@/actions/no"
 import { NoItem, TipoNo } from "@/actions/types"
 import { PinDialog } from "@/components/pin-dialog"
@@ -46,9 +49,18 @@ interface SidebarTreeProps {
   activeId?: string
 }
 
+function hasActiveChild(node: NoItem, activeId?: string): boolean {
+  if (!activeId) return false
+  if (node.id === activeId) return true
+  if (node.filhos) {
+    return node.filhos.some((filho) => hasActiveChild(filho, activeId))
+  }
+  return false
+}
+
 function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
   const router = useRouter()
-  const [isOpen, setIsOpen] = React.useState(true)
+  const [isOpen, setIsOpen] = React.useState(() => hasActiveChild(item, activeId))
 
   const isActive = activeId === item.id
   const isPasta = item.tipo === TipoNo.PASTA
@@ -178,9 +190,9 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
     router.refresh()
 
     if (pendingActionData.action === "deletar" && isActive) {
-      router.push("/")
+      navigateWith(router, "/")
     } else if (res && "id" in res && res.id && pendingActionData.action === "criarArquivo") {
-      router.push(`/n/${res.id}`)
+      navigateWith(router, `/n/${res.id}`)
     }
   }
 
@@ -197,7 +209,7 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
             if (isPasta) {
               setIsOpen(!isOpen)
             } else {
-              router.push(`/n/${item.id}`)
+              navigateWith(router, `/n/${item.id}`)
             }
           }}
         >
@@ -207,6 +219,16 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
                 isOpen ? "rotate-90" : ""
               }`}
             />
+          ) : (
+            <span className="w-3.5 shrink-0" />
+          )}
+
+          {isPasta ? (
+            isOpen ? (
+              <FolderOpen className="size-3.5 shrink-0 text-muted-foreground" />
+            ) : (
+              <Folder className="size-3.5 shrink-0 text-muted-foreground" />
+            )
           ) : (
             <span className="w-3.5 shrink-0" />
           )}
@@ -445,7 +467,7 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
     router.refresh()
 
     if (res.id && rootPendingData.action === "criarArquivo") {
-      router.push(`/n/${res.id}`)
+      navigateWith(router, `/n/${res.id}`)
     }
   }
 
