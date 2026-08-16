@@ -12,6 +12,7 @@ import {
 import { PinDialog } from "@/components/pin-dialog"
 import { executarComandoCli } from "@/actions/no"
 import { NoItem } from "@/actions/types"
+import { navigateWith } from "@/lib/navigation"
 
 interface CommandBarDialogProps {
   open: boolean
@@ -190,11 +191,11 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
     onOpenChange(false)
     router.refresh()
     if (res.id && res.tipo === "ARQUIVO") {
-      router.push(`/n/${res.id}`)
+      navigateWith(router, `/n/${res.id}`)
     } else if (res.deletedId) {
       const currentPath = window.location.pathname
       if (currentPath.includes(`/n/${res.deletedId}`)) {
-        router.push("/")
+        navigateWith(router, "/")
       }
     }
   }

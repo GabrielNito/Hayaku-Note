@@ -6,8 +6,21 @@ import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import Paragraph from "@tiptap/extension-paragraph"
 import StarterKit from "@tiptap/starter-kit"
+import Code from "@tiptap/extension-code"
+import { markInputRule } from "@tiptap/core"
 import Placeholder from "@tiptap/extension-placeholder"
 import { Markdown } from "tiptap-markdown"
+
+const CustomCode = Code.extend({
+  addInputRules() {
+    return [
+      markInputRule({
+        find: /(?:^|[^`])(`([^`]+)`)$/,
+        type: this.type,
+      }),
+    ]
+  },
+})
 import { CustomCodeBlock } from "@/components/extensions/code-block"
 import { CustomTableBlock } from "@/components/extensions/table"
 import { normalizeMarkdownTables } from "@/lib/markdown-table"
@@ -23,6 +36,14 @@ import xml from "highlight.js/lib/languages/xml"
 import sql from "highlight.js/lib/languages/sql"
 import { salvarConteudo } from "@/actions/no"
 import { PinDialog } from "@/components/pin-dialog"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { useRouter } from "next/navigation"
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
@@ -102,6 +123,22 @@ export function NoteEditor({
   const [showAiPinModal, setShowAiPinModal] = React.useState(false)
   const [chatProvider, setChatProvider] = React.useState<"google" | "openai" | "anthropic">("google")
   const [chatModel, setChatModel] = React.useState<string>("gemini-3.5-flash")
+  const [showUnsavedDialog, setShowUnsavedDialog] = React.useState(false)
+  const [pendingNavigationCallback, setPendingNavigationCallback] = React.useState<(() => void) | null>(null)
+
+  React.useEffect(() => {
+    window.__checkUnsavedChangesBeforeNav = (cb: () => void) => {
+      if (isDirty) {
+        setPendingNavigationCallback(() => cb)
+        setShowUnsavedDialog(true)
+      } else {
+        cb()
+      }
+    }
+    return () => {
+      window.__checkUnsavedChangesBeforeNav = undefined
+    }
+  }, [isDirty])
 
   if (noId !== prevNoId) {
     setPrevNoId(noId)
@@ -117,7 +154,9 @@ export function NoteEditor({
       StarterKit.configure({
         codeBlock: false,
         paragraph: false,
+        code: false,
       }),
+      CustomCode,
       CustomParagraph,
       Markdown.configure({
         html: true,
@@ -353,6 +392,12 @@ export function NoteEditor({
       now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     )
     setShowPinModal(false)
+
+    if (pendingNavigationCallback) {
+      const cb = pendingNavigationCallback
+      setPendingNavigationCallback(null)
+      cb()
+    }
   }
 
   const handleProposeEdit = React.useCallback(
@@ -609,13 +654,13 @@ export function NoteEditor({
         {isChatOpen && !isMobile ? (
           <ResizablePanelGroup orientation="horizontal" className="h-full w-full">
             <ResizablePanel defaultSize={60} minSize={30}>
-              <ScrollArea className="h-full w-full">
-                <main className="px-4 py-8 pb-48 flex justify-center min-h-full w-full box-border">
-                  <div className="w-full max-w-180 font-sans text-foreground">
+              <div className="h-full w-full overflow-y-auto overflow-x-hidden">
+                <main className="px-3 sm:px-6 py-8 pb-48 flex justify-center min-h-full w-full box-border overflow-x-hidden">
+                  <div className="w-full max-w-180 font-sans text-foreground box-border min-w-0">
                     <EditorContent editor={editor} />
                   </div>
                 </main>
-              </ScrollArea>
+              </div>
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={40} minSize={20}>
@@ -638,13 +683,13 @@ export function NoteEditor({
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : (
-          <ScrollArea className="h-full w-full">
-            <main className="px-4 py-8 pb-48 flex justify-center min-h-full w-full box-border">
-              <div className="w-full max-w-180 font-sans text-foreground">
+          <div className="h-full w-full overflow-y-auto overflow-x-hidden">
+            <main className="px-3 sm:px-6 py-8 pb-48 flex justify-center min-h-full w-full box-border overflow-x-hidden">
+              <div className="w-full max-w-180 font-sans text-foreground box-border min-w-0">
                 <EditorContent editor={editor} />
               </div>
             </main>
-          </ScrollArea>
+          </div>
         )}
 
         {isChatOpen && isMobile && (
@@ -708,6 +753,59 @@ export function NoteEditor({
         title="PIN para acessar Assistente IA"
         description="Digite o PIN de 6 dígitos para autorizar o acesso ao chat com inteligência artificial."
       />
+
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent className="sm:max-w-100">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm font-medium">Alterações não salvas</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              Você possui alterações não salvas nesta nota. O que deseja fazer antes de sair?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowUnsavedDialog(false)
+                setPendingNavigationCallback(null)
+              }}
+              className="h-8 text-xs"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsDirty(false)
+                setShowUnsavedDialog(false)
+                if (pendingNavigationCallback) {
+                  const cb = pendingNavigationCallback
+                  setPendingNavigationCallback(null)
+                  cb()
+                }
+              }}
+              className="h-8 text-xs text-destructive hover:text-destructive"
+            >
+              Descartar
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                setShowUnsavedDialog(false)
+                handleTriggerSave()
+              }}
+              className="h-8 text-xs"
+            >
+              Salvar
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
