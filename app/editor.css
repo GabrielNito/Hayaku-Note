@@ -121,12 +121,12 @@
 
 /* Custom minimal code block lowlight styling */
 .ProseMirror pre {
-  background: var(--code-bg);
+  background: transparent;
   color: var(--code-fg);
   font-family: var(--font-mono), monospace;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius);
-  margin: 1em 0;
+  padding: 0.5rem 0;
+  border-radius: 0;
+  margin: 0;
   font-size: 0.85rem;
 }
 

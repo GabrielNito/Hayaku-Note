@@ -264,7 +264,7 @@ export function NoteEditor({
     }
   }, [noId, editor])
 
-  // Global shortcuts for Save (Ctrl+S), Sidebar (Ctrl+Shift+B), and Bold (Ctrl+B)
+  // Global shortcuts for Save (Ctrl+S), Sidebar (Ctrl+Shift+B), Bold (Ctrl+B), and AI Chat (Ctrl+/)
   React.useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const isMod = e.metaKey || e.ctrlKey
@@ -289,11 +289,18 @@ export function NoteEditor({
         }
         return
       }
+
+      if (key === "/") {
+        e.preventDefault()
+        e.stopPropagation()
+        void handleToggleChat()
+        return
+      }
     }
 
     window.addEventListener("keydown", handleKeyDown, { capture: true })
     return () => window.removeEventListener("keydown", handleKeyDown, { capture: true })
-  }, [toggleSidebar, editor, handleTriggerSave])
+  }, [toggleSidebar, editor, handleTriggerSave, handleToggleChat])
 
   // Warn before leaving page with unsaved changes
   React.useEffect(() => {
