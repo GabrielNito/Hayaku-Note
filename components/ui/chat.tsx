@@ -78,7 +78,7 @@ export function Bubble({ variant = "assistant", children, className, ...props }:
         "rounded-2xl px-4 py-3 leading-relaxed shadow-xs text-sm",
         isUser
           ? "bg-primary text-primary-foreground rounded-tr-xs whitespace-pre-wrap"
-          : "bg-muted text-foreground rounded-tl-xs border border-border/50 [&_p]:m-0 [&_p+p]:mt-2 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_pre]:bg-background/80 [&_pre]:p-2.5 [&_pre]:rounded-lg [&_code]:text-xs [&_code]:bg-background/60 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_pre_code]:bg-transparent [&_a]:underline",
+          : "bg-muted text-foreground rounded-tl-xs border border-border/50 [&_p]:m-0 [&_p+p]:mt-2 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_pre]:bg-background/80 [&_pre]:py-1 [&_pre]:px-3 [&_pre]:rounded-lg [&_code]:text-xs [&_code]:bg-background/60 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_pre_code]:bg-transparent [&_a]:underline",
         className
       )}
       {...props}

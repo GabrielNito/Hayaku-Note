@@ -122,12 +122,12 @@
 
 /* Custom code block styling with syntax highlighting */
 .ProseMirror pre {
-  background: var(--code-bg);
+  background: transparent;
   color: var(--code-fg);
   font-family: var(--font-mono), monospace;
-  padding: 1em;
-  border-radius: var(--radius);
-  margin: 1em 0;
+  padding: 0.5rem 0;
+  border-radius: 0;
+  margin: 0;
   font-size: 0.85rem;
   overflow-x: auto;
   max-width: 100%;
