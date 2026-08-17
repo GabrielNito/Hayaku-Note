@@ -5,6 +5,7 @@ import { NodeViewWrapper, ReactNodeViewRenderer, type ReactNodeViewProps } from 
 import { useRouter } from "next/navigation"
 import * as React from "react"
 import type { NoItem } from "@/actions/types"
+import { navigateWith } from "@/lib/navigation"
 
 // ──────────────────────────────────────────────
 // NodeView: renders the [[nome]] node inline
@@ -32,7 +33,7 @@ function WikiLinkView({ node, extension }: ReactNodeViewProps) {
   function handleClick(e: React.MouseEvent) {
     e.preventDefault()
     if (targetId) {
-      router.push(`/n/${targetId}`)
+      navigateWith(router, `/n/${targetId}`)
     }
   }
 

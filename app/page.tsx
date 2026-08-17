@@ -1,7 +1,6 @@
-import { obterArvore, obterPrimeiroArquivo } from "@/actions/no"
+import { obterArvore } from "@/actions/no"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider } from "@/components/ui/sidebar"
-import { redirect } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { GlobalShortcuts } from "@/components/global-shortcuts"
 import { AccessGate } from "@/components/access-gate"
@@ -19,11 +18,6 @@ export default async function HomePage() {
   }
 
   const arvore = await obterArvore()
-  const primeiroArquivo = await obterPrimeiroArquivo()
-
-  if (primeiroArquivo) {
-    redirect(`/n/${primeiroArquivo.id}`)
-  }
 
   return (
     <GlobalShortcuts arvore={arvore} exigirPinBusca={politicas.exigirPinBusca}>

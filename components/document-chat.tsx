@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,6 +27,15 @@ interface DocumentChatProps {
   isOpen: boolean;
   onClose: () => void;
   getDocumentContent: () => string;
+  onProposeEdit?: (proposedContent: string, summary?: string, originalSnippet?: string, position?: string) => void;
+  provider: Provider;
+  setProvider: (p: Provider) => void;
+  model: string;
+  setModel: (m: string) => void;
+  messages: any[];
+  sendMessage: (message: { text: string }, options?: any) => Promise<any>;
+  status: string;
+  error: any;
 }
 
 type Provider = "google" | "openai" | "anthropic";
@@ -58,10 +65,21 @@ const providerNames: Record<Provider, string> = {
   anthropic: "Anthropic Claude",
 };
 
-export function DocumentChat({ isOpen, onClose, getDocumentContent }: DocumentChatProps) {
+export function DocumentChat({
+  isOpen,
+  onClose,
+  getDocumentContent,
+  onProposeEdit,
+  provider,
+  setProvider,
+  model,
+  setModel,
+  messages,
+  sendMessage,
+  status,
+  error,
+}: DocumentChatProps) {
   const [configuredKeys, setConfiguredKeys] = useState<{ google: boolean; openai: boolean; anthropic: boolean } | null>(null);
-  const [provider, setProvider] = useState<Provider>("google");
-  const [model, setModel] = useState<string>("gemini-3.5-flash");
   const [input, setInput] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -78,20 +96,54 @@ export function DocumentChat({ isOpen, onClose, getDocumentContent }: DocumentCh
         })
         .catch(() => {});
     }
-  }, [isOpen]);
+  }, [isOpen, provider, setProvider, setModel]);
 
-  const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/chat",
-      headers: {
-        "x-provider": provider,
-        "x-model": model,
-      },
-      body: {
-        documentContent: getDocumentContent(),
-      },
-    }),
-  });
+  const processedProposalIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (status === "submitted" || status === "streaming" || !onProposeEdit) return;
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg && lastMsg.role === "assistant" && !processedProposalIdsRef.current.has(lastMsg.id)) {
+      const textContent =
+        lastMsg.parts
+          ?.map((p: any) => (p.type === "text" ? p.text : ""))
+          .join("") ||
+        (lastMsg as any).content ||
+        "";
+
+      const tagMatch = textContent.match(/<proposed_edit\s*([\s\S]*?)>([\s\S]*?)<\/proposed_edit>/)
+        || textContent.match(/<proposed_document>([\s\S]*?)<\/proposed_document>/);
+
+      if (tagMatch) {
+        processedProposalIdsRef.current.add(lastMsg.id);
+
+        let originalSnippet = "";
+        let summary = "Proposta da IA";
+        let position = "";
+        let proposedText = "";
+
+        if (tagMatch[0].startsWith("<proposed_edit")) {
+          const attrsStr = tagMatch[1] || "";
+          proposedText = tagMatch[2]?.trim() || "";
+
+          const origMatch = attrsStr.match(/original="([^"]*)"/);
+          if (origMatch) originalSnippet = origMatch[1];
+
+          const sumMatch = attrsStr.match(/summary="([^"]*)"/);
+          if (sumMatch) summary = sumMatch[1];
+
+          const posMatch = attrsStr.match(/position="([^"]*)"/);
+          if (posMatch) position = posMatch[1];
+        } else {
+          proposedText = tagMatch[1]?.trim() || "";
+        }
+
+        if (proposedText) {
+          onProposeEdit(proposedText, summary, originalSnippet, position);
+        }
+      }
+    }
+  }, [messages, status, onProposeEdit]);
 
   if (!isOpen) return null;
 
@@ -247,22 +299,30 @@ export function DocumentChat({ isOpen, onClose, getDocumentContent }: DocumentCh
                 (m as any).content ||
                 "";
 
+              const displayText = textContent
+                .replace(/<proposed_edit[\s\S]*?<\/proposed_edit>/g, "")
+                .replace(/<proposed_document>[\s\S]*?<\/proposed_document>/g, "")
+                .trim();
+
               return (
                 <Message
                   key={m.id}
                   role={m.role as any}
                   avatar={m.role === "user" ? <User className="size-4" /> : <Bot className="size-4" />}
                 >
-                  <Bubble variant={m.role === "user" ? "user" : "assistant"}>
-                    {textContent}
-                  </Bubble>
+                  {displayText && (
+                    <Bubble variant={m.role === "user" ? "user" : "assistant"}>
+                      {displayText}
+                    </Bubble>
+                  )}
+
                   {m.role !== "user" && textContent && (
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pl-1 pt-1">
                       <Button
                         variant="ghost"
                         size="icon-xs"
                         className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                        onClick={() => copyToClipboard(textContent, m.id)}
+                        onClick={() => copyToClipboard(displayText || textContent, m.id)}
                         title="Copiar resposta"
                       >
                         {copiedId === m.id ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}

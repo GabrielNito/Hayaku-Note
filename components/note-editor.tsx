@@ -1,12 +1,59 @@
 "use client"
 
 import * as React from "react"
-import { useEditor, EditorContent } from "@tiptap/react"
+import { useEditor, EditorContent, NodeViewWrapper, NodeViewContent, ReactNodeViewRenderer } from "@tiptap/react"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport } from "ai"
 import Paragraph from "@tiptap/extension-paragraph"
 import StarterKit from "@tiptap/starter-kit"
+import Code from "@tiptap/extension-code"
+import { markInputRule } from "@tiptap/core"
 import Placeholder from "@tiptap/extension-placeholder"
 import { Markdown } from "tiptap-markdown"
-import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight"
+import TaskList from "@tiptap/extension-task-list"
+import TaskItem from "@tiptap/extension-task-item"
+import { Checkbox } from "@/components/ui/checkbox"
+
+const CustomCode = Code.extend({
+  addInputRules() {
+    return [
+      markInputRule({
+        find: /(?:^|[^`])(`([^`]+)`)$/,
+        type: this.type,
+      }),
+    ]
+  },
+})
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const TaskItemComponent = ({ node, updateAttributes }: { node: any; updateAttributes: (attrs: any) => void }) => {
+  const isChecked = node.attrs.checked
+
+  return (
+    <NodeViewWrapper as="li" data-checked={isChecked} className="flex items-center gap-2 my-1">
+      <label contentEditable={false} className="select-none flex items-center">
+        <Checkbox
+          checked={isChecked}
+          onCheckedChange={(checked) => {
+            updateAttributes({ checked: Boolean(checked) })
+          }}
+        />
+      </label>
+      <div className={`flex-1 ${isChecked ? "line-through text-muted-foreground" : ""}`}>
+        <NodeViewContent className="outline-none" />
+      </div>
+    </NodeViewWrapper>
+  )
+}
+
+const CustomTaskItem = TaskItem.extend({
+  addNodeView() {
+    return ReactNodeViewRenderer(TaskItemComponent)
+  },
+})
+import { CustomCodeBlock } from "@/components/extensions/code-block"
+import { CustomTableBlock } from "@/components/extensions/table"
+import { normalizeMarkdownTables } from "@/lib/markdown-table"
 import { ResizableImage } from "@/components/resizable-image"
 import { common, createLowlight } from "lowlight"
 import js from "highlight.js/lib/languages/javascript"
@@ -19,16 +66,27 @@ import xml from "highlight.js/lib/languages/xml"
 import sql from "highlight.js/lib/languages/sql"
 import { salvarConteudo } from "@/actions/no"
 import { PinDialog } from "@/components/pin-dialog"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { useRouter } from "next/navigation"
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { uploadFiles } from "@/lib/uploadthing"
-import { Download, Sparkles } from "lucide-react"
+import { Download, Sparkles, Search, Terminal, Table as TableIcon } from "lucide-react"
 import { liberarAcesso } from "@/actions/acesso"
 import { verificarAcessoChatAi } from "@/actions/configuracoes"
 import { DocumentChat } from "@/components/document-chat"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { AiProposalBlock } from "@/components/extensions/ai-proposal-block"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 const lowlight = createLowlight(common)
 lowlight.register("javascript", js)
@@ -79,23 +137,43 @@ export function NoteEditor({
 }: NoteEditorProps) {
   const router = useRouter()
   const { toggleSidebar } = useSidebar()
+  const isMobile = useIsMobile()
   const [isDirty, setIsDirty] = React.useState(false)
   const [lastSavedTime, setLastSavedTime] = React.useState<string | null>(null)
   const [showPinModal, setShowPinModal] = React.useState(false)
   const [pendingSaveContent, setPendingSaveContent] = React.useState("")
   const [prevNoId, setPrevNoId] = React.useState(noId)
   const [prevInitialContent, setPrevInitialContent] = React.useState(initialContent)
-  const [savedContent, setSavedContent] = React.useState(initialContent)
+  const normalizedInitial = React.useMemo(() => normalizeMarkdownTables(initialContent), [initialContent])
+  const [savedContent, setSavedContent] = React.useState(normalizedInitial)
   const [showExportPinModal, setShowExportPinModal] = React.useState(false)
   const [showImagePinModal, setShowImagePinModal] = React.useState(false)
   const [pendingImage, setPendingImage] = React.useState<File | null>(null)
   const [isChatOpen, setIsChatOpen] = React.useState(false)
   const [showAiPinModal, setShowAiPinModal] = React.useState(false)
+  const [chatProvider, setChatProvider] = React.useState<"google" | "openai" | "anthropic">("google")
+  const [chatModel, setChatModel] = React.useState<string>("gemini-3.5-flash")
+  const [showUnsavedDialog, setShowUnsavedDialog] = React.useState(false)
+  const [pendingNavigationCallback, setPendingNavigationCallback] = React.useState<(() => void) | null>(null)
+
+  React.useEffect(() => {
+    window.__checkUnsavedChangesBeforeNav = (cb: () => void) => {
+      if (isDirty) {
+        setPendingNavigationCallback(() => cb)
+        setShowUnsavedDialog(true)
+      } else {
+        cb()
+      }
+    }
+    return () => {
+      window.__checkUnsavedChangesBeforeNav = undefined
+    }
+  }, [isDirty])
 
   if (noId !== prevNoId) {
     setPrevNoId(noId)
     setPrevInitialContent(initialContent)
-    setSavedContent(initialContent)
+    setSavedContent(normalizeMarkdownTables(initialContent))
     setIsDirty(false)
     setLastSavedTime(null)
   }
@@ -106,7 +184,9 @@ export function NoteEditor({
       StarterKit.configure({
         codeBlock: false,
         paragraph: false,
+        code: false,
       }),
+      CustomCode,
       CustomParagraph,
       Markdown.configure({
         html: true,
@@ -119,10 +199,16 @@ export function NoteEditor({
       Placeholder.configure({
         placeholder: "Comece a escrever...",
       }),
-      CodeBlockLowlight.configure({
+      CustomCodeBlock.configure({
         lowlight,
       }),
+      CustomTableBlock,
       ResizableImage,
+      AiProposalBlock,
+      TaskList,
+      CustomTaskItem.configure({
+        nested: true,
+      }),
     ],
     content: savedContent,
     editorProps: {
@@ -173,6 +259,25 @@ export function NoteEditor({
       const markdown = editor.storage.markdown.getMarkdown() as string
       setIsDirty(markdown !== savedContent)
     },
+  })
+
+  const getDocumentContent = React.useCallback(() => {
+    if (!editor) return initialContent
+    // @ts-expect-error getMarkdown
+    return (editor.storage.markdown.getMarkdown() as string) || initialContent
+  }, [editor, initialContent])
+
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      headers: {
+        "x-provider": chatProvider,
+        "x-model": chatModel,
+      },
+      body: {
+        documentContent: getDocumentContent(),
+      },
+    }),
   })
 
   function enviarImagem(file: File) {
@@ -328,13 +433,157 @@ export function NoteEditor({
       now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     )
     setShowPinModal(false)
+
+    if (pendingNavigationCallback) {
+      const cb = pendingNavigationCallback
+      setPendingNavigationCallback(null)
+      cb()
+    }
   }
 
-  const getDocumentContent = React.useCallback(() => {
-    if (!editor) return initialContent
-    // @ts-expect-error getMarkdown
-    return (editor.storage.markdown.getMarkdown() as string) || initialContent
-  }, [editor, initialContent])
+  const handleProposeEdit = React.useCallback(
+    (
+      proposedContent: string,
+      summary?: string,
+      originalSnippet?: string,
+      position?: string
+    ) => {
+      if (!editor) return
+
+      setTimeout(() => {
+        let originalContent = originalSnippet?.trim() || ""
+        const docSize = editor.state.doc.content.size
+
+        if (position === "end") {
+          editor
+            .chain()
+            .focus()
+            .insertContentAt(docSize, {
+              type: "aiProposalBlock",
+              attrs: {
+                originalContent,
+                proposedContent,
+                summary: summary || "Adicionado no final do documento",
+              },
+            })
+            .run()
+          return
+        }
+
+        if (position === "start") {
+          editor
+            .chain()
+            .focus()
+            .insertContentAt(0, {
+              type: "aiProposalBlock",
+              attrs: {
+                originalContent,
+                proposedContent,
+                summary: summary || "Adicionado no início do documento",
+              },
+            })
+            .run()
+          return
+        }
+
+        // Se originalContent for fornecido, busca no documento a seção correspondente (cabeçalho + conteúdo filho) para substituir no local exato (in-place)
+        if (originalContent) {
+          let targetRange: { from: number; to: number; origText: string } | null = null
+          const clean = originalContent.trim().toLowerCase()
+          const doc = editor.state.doc
+
+          let startPos: number | null = null
+          let endPos: number | null = null
+          let isHeadingSection = false
+          let found = false
+
+          doc.forEach((node: any, offset: number) => {
+            if (found && isHeadingSection) {
+              if (node.type.name === "heading") {
+                isHeadingSection = false
+                return
+              }
+              endPos = offset + node.nodeSize
+              return
+            }
+
+            if (!found && node.isBlock && node.textContent) {
+              const text = node.textContent.trim().toLowerCase()
+              if (text && (text.includes(clean) || clean.includes(text))) {
+                found = true
+                startPos = offset
+                endPos = offset + node.nodeSize
+                if (node.type.name === "heading") {
+                  isHeadingSection = true
+                }
+              }
+            }
+          })
+
+          if (startPos !== null && endPos !== null) {
+            targetRange = {
+              from: startPos,
+              to: endPos,
+              origText: doc.textBetween(startPos, endPos, "\n"),
+            }
+          }
+
+          if (targetRange) {
+            const range = targetRange
+            const actualOriginal = range.origText || originalContent
+            editor
+              .chain()
+              .focus()
+              .deleteRange({ from: range.from, to: range.to })
+              .insertContentAt(range.from, {
+                type: "aiProposalBlock",
+                attrs: {
+                  originalContent: actualOriginal,
+                  proposedContent,
+                  summary: summary || "Proposta da IA",
+                },
+              })
+              .run()
+            return
+          }
+        }
+
+        const { from, to } = editor.state.selection
+        const hasSelection = from !== to
+
+        if (hasSelection && !originalContent) {
+          originalContent = editor.state.doc.textBetween(from, to, "\n")
+          editor
+            .chain()
+            .focus()
+            .deleteRange({ from, to })
+            .insertContentAt(from, {
+              type: "aiProposalBlock",
+              attrs: {
+                originalContent,
+                proposedContent,
+                summary: summary || "Proposta da IA",
+              },
+            })
+            .run()
+        } else {
+          editor
+            .chain()
+            .focus()
+            .insertContent({
+              type: "aiProposalBlock",
+              attrs: {
+                originalContent,
+                proposedContent,
+                summary: summary || "Proposta da IA",
+              },
+            })
+            .run()
+        }
+      }, 0)
+    },
+    [editor]
+  )
 
   return (
     <div className="flex flex-col h-screen w-full bg-background overflow-hidden">
@@ -342,24 +591,64 @@ export function NoteEditor({
       <header className="h-11 border-b border-border/60 flex items-center justify-between px-4 shrink-0 bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-2 overflow-hidden text-xs text-muted-foreground font-sans">
           <SidebarTrigger className="h-7 w-7 text-muted-foreground hover:text-foreground mr-1" />
-          {caminhoBreadcrumb.map((item, index) => (
-            <React.Fragment key={item.id}>
-              {index > 0 && <span className="text-border">/</span>}
-              <span
-                className={`truncate ${
-                  index === caminhoBreadcrumb.length - 1
-                    ? "text-foreground font-medium"
-                    : ""
-                }`}
-              >
-                {item.nome}
-              </span>
-            </React.Fragment>
-          ))}
+          <div className="hidden sm:flex items-center gap-2 overflow-hidden">
+            {caminhoBreadcrumb.map((item, index) => (
+              <React.Fragment key={item.id}>
+                {index > 0 && <span className="text-border">/</span>}
+                <span
+                  className={`truncate ${
+                    index === caminhoBreadcrumb.length - 1
+                      ? "text-foreground font-medium"
+                      : ""
+                  }`}
+                >
+                  {item.nome}
+                </span>
+              </React.Fragment>
+            ))}
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-mono text-muted-foreground transition-opacity duration-300">
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="outline"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-quick-open"))}
+            aria-label="Busca rápida (Quick Open)"
+            title="Busca Rápida (Ctrl+P)"
+            className="h-7 w-7"
+          >
+            <Search className="size-3.5" />
+          </Button>
+
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="outline"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-command-bar"))}
+            aria-label="Command Bar (CLI)"
+            title="Command Bar (Ctrl+Shift+P)"
+            className="h-7 w-7"
+          >
+            <Terminal className="size-3.5" />
+          </Button>
+
+          <Button
+            type="button"
+            size="icon-sm"
+            variant="outline"
+            onClick={() => {
+              editor?.chain().focus().insertTable(3, 3).run()
+            }}
+            aria-label="Inserir Tabela"
+            title="Inserir Tabela (3x3)"
+            className="h-7 w-7"
+          >
+            <TableIcon className="size-3.5" />
+          </Button>
+
+          <span className="text-xs font-mono text-muted-foreground transition-opacity duration-300 hidden sm:inline">
             {isDirty
               ? "Alterações não salvas"
               : lastSavedTime
@@ -401,38 +690,68 @@ export function NoteEditor({
         </div>
       </header>
 
-      {/* Content area: editor + side chat with resizable panels */}
-      <div className="flex-1 flex flex-row min-h-0 overflow-hidden">
-        {isChatOpen ? (
-          <ResizablePanelGroup orientation="horizontal" className="flex-1 h-full">
-            <ResizablePanel defaultSize={60} minSize={30} className="flex flex-col h-full">
-              <ScrollArea className="flex-1 h-full">
-                <main className="px-4 py-8 pb-48 flex justify-center min-h-full">
-                  <div className="w-full max-w-180 font-sans text-foreground">
+      {/* Content area: editor + side chat / mobile sheet */}
+      <div className="flex-1 flex flex-row min-h-0 overflow-hidden relative">
+        {isChatOpen && !isMobile ? (
+          <ResizablePanelGroup orientation="horizontal" className="h-full w-full">
+            <ResizablePanel defaultSize={60} minSize={30}>
+              <div className="h-full w-full overflow-y-auto overflow-x-hidden">
+                <main className="px-3 sm:px-6 py-8 pb-48 flex justify-center min-h-full w-full box-border overflow-x-hidden">
+                  <div className="w-full max-w-180 font-sans text-foreground box-border min-w-0">
                     <EditorContent editor={editor} />
                   </div>
                 </main>
-              </ScrollArea>
+              </div>
             </ResizablePanel>
-
             <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={40} minSize={20}>
+              <div className="h-full w-full bg-background flex flex-col">
+                <DocumentChat
+                  isOpen={isChatOpen}
+                  onClose={() => setIsChatOpen(false)}
+                  getDocumentContent={getDocumentContent}
+                  onProposeEdit={handleProposeEdit}
+                  provider={chatProvider}
+                  setProvider={setChatProvider}
+                  model={chatModel}
+                  setModel={setChatModel}
+                  messages={messages}
+                  sendMessage={sendMessage}
+                  status={status}
+                  error={error}
+                />
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        ) : (
+          <div className="h-full w-full overflow-y-auto overflow-x-hidden">
+            <main className="px-3 sm:px-6 py-8 pb-48 flex justify-center min-h-full w-full box-border overflow-x-hidden">
+              <div className="w-full max-w-180 font-sans text-foreground box-border min-w-0">
+                <EditorContent editor={editor} />
+              </div>
+            </main>
+          </div>
+        )}
 
-            <ResizablePanel defaultSize={40} minSize={25} className="flex flex-col h-full bg-background">
+        {isChatOpen && isMobile && (
+          <Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
+            <SheetContent side="bottom" className="h-[80vh] max-h-[80vh] p-0 flex flex-col bg-background" showCloseButton={false}>
               <DocumentChat
                 isOpen={isChatOpen}
                 onClose={() => setIsChatOpen(false)}
                 getDocumentContent={getDocumentContent}
+                onProposeEdit={handleProposeEdit}
+                provider={chatProvider}
+                setProvider={setChatProvider}
+                model={chatModel}
+                setModel={setChatModel}
+                messages={messages}
+                sendMessage={sendMessage}
+                status={status}
+                error={error}
               />
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        ) : (
-          <ScrollArea className="flex-1 h-full w-full">
-            <main className="px-4 py-8 flex justify-center min-h-full">
-              <div className="w-full max-w-180 font-sans text-foreground">
-                <EditorContent editor={editor} />
-              </div>
-            </main>
-          </ScrollArea>
+            </SheetContent>
+          </Sheet>
         )}
       </div>
 
@@ -475,6 +794,59 @@ export function NoteEditor({
         title="PIN para acessar Assistente IA"
         description="Digite o PIN de 6 dígitos para autorizar o acesso ao chat com inteligência artificial."
       />
+
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent className="sm:max-w-100">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm font-medium">Alterações não salvas</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              Você possui alterações não salvas nesta nota. O que deseja fazer antes de sair?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowUnsavedDialog(false)
+                setPendingNavigationCallback(null)
+              }}
+              className="h-8 text-xs"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsDirty(false)
+                setShowUnsavedDialog(false)
+                if (pendingNavigationCallback) {
+                  const cb = pendingNavigationCallback
+                  setPendingNavigationCallback(null)
+                  cb()
+                }
+              }}
+              className="h-8 text-xs text-destructive hover:text-destructive"
+            >
+              Descartar
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                setShowUnsavedDialog(false)
+                handleTriggerSave()
+              }}
+              className="h-8 text-xs"
+            >
+              Salvar
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

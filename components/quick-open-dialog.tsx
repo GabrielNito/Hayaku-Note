@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/command"
 import { FileText } from "lucide-react"
 import { NoItem } from "@/actions/types"
+import { navigateWith } from "@/lib/navigation"
 
 interface QuickOpenDialogProps {
   open: boolean
@@ -67,7 +68,7 @@ export function QuickOpenDialog({ open, onOpenChange, arvore }: QuickOpenDialogP
               value={file.path}
               onSelect={() => {
                 runCommand(() => {
-                  router.push(`/n/${file.id}`)
+                  navigateWith(router, `/n/${file.id}`)
                 })
               }}
             >

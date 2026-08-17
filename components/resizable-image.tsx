@@ -45,9 +45,9 @@ const ImageComponent = ({
   )
 
   return (
-    <NodeViewWrapper className="relative inline-block my-2 group select-none">
+    <NodeViewWrapper className="relative block my-2 group select-none max-w-full overflow-hidden">
       <div
-        className={`relative inline-block ${
+        className={`relative block max-w-full ${
           selected || isResizing ? "ring-2 ring-primary rounded-md" : ""
         }`}
       >
@@ -55,8 +55,11 @@ const ImageComponent = ({
           ref={imgRef}
           src={node.attrs.src}
           alt={node.attrs.alt || ""}
-          style={{ width: node.attrs.width || "100%", height: "auto" }}
-          className="rounded-md max-w-full block"
+          style={{
+            width: node.attrs.width ? `min(100%, ${node.attrs.width})` : "100%",
+            height: "auto",
+          }}
+          className="rounded-md max-w-full block h-auto object-contain"
         />
         {(selected || isResizing) && (
           <div
