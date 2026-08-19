@@ -1,8 +1,9 @@
 {
-  "name": "hayaku-note",
+  "name": "mesa-pad",
   "version": "0.0.1",
   "type": "module",
   "private": true,
+  "repository": "https://github.com/Memlith/Mesa-Pad.git",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",

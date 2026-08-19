@@ -12,7 +12,7 @@ const setupKey = crypto.randomBytes(24).toString("hex")
 const totpEncryptionKey = crypto.randomBytes(32).toString("base64")
 
 console.log("==================================================")
-console.log("  🪨 Hayaku Note Secrets Generated")
+console.log("  🪨 Mesa-Pad Secrets Generated")
 console.log("==================================================")
 console.log(`PIN: ${pin}`)
 console.log("")

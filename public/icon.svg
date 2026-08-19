@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Half-Life Dark Circular Badge -->
+  <circle cx="256" cy="256" r="248" fill="#121316" />
+  <!-- Outer Half-Life Orange Hazard Ring -->
+  <circle cx="256" cy="256" r="226" fill="none" stroke="#F58220" stroke-width="26" />
+  <!-- Half-Life Lambda Glyph in Iconic Orange -->
+  <g transform="translate(256, 256) scale(2.32) translate(-87.5, -96.5)">
+    <path fill="#F58220" d="M47.243238 12.929372v25.907582h21.335657l8.762858 27.050564-65.14995 100.963372h32.003485l46.48125-68.578894 30.479512 76.960764 48.00522-15.23976-7.61987-23.62162-22.09765 6.85789L87.628587 12.929372H47.243238z" />
+  </g>
+</svg>

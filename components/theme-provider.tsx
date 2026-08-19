@@ -21,15 +21,14 @@ export function ThemeProvider({
   enableSystem?: boolean
   disableTransitionOnChange?: boolean
 }) {
-  const [theme, setThemeState] = React.useState<Theme>("system")
-  const [resolvedTheme, setResolvedTheme] = React.useState<"dark" | "light">("light")
-
-  React.useEffect(() => {
-    const saved = localStorage.getItem("theme") as Theme
-    if (saved) {
-      setThemeState(saved)
+  const [theme, setThemeState] = React.useState<Theme>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("theme") as Theme
+      if (saved) return saved
     }
-  }, [])
+    return "system"
+  })
+  const [resolvedTheme, setResolvedTheme] = React.useState<"dark" | "light">("light")
 
   React.useLayoutEffect(() => {
     const root = document.documentElement

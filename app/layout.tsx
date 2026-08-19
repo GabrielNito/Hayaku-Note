@@ -15,8 +15,8 @@ const fontMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Hayaku Note",
-  description: "Hayaku Note",
+  title: "Mesa-Pad",
+  description: "Mesa-Pad",
   icons: {
     icon: "/icon.ico",
   },

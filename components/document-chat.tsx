@@ -23,6 +23,8 @@ import {
 import { Bot, User, Send, ChevronDown, Sparkles, Loader2, X, MessageSquare, AlertCircle, Copy, Check, FileText } from "lucide-react";
 import { verificarApiKeysConfiguradas } from "@/actions/configuracoes";
 
+import type { UIMessage } from "@ai-sdk/react";
+
 interface DocumentChatProps {
   isOpen: boolean;
   onClose: () => void;
@@ -32,10 +34,10 @@ interface DocumentChatProps {
   setProvider: (p: Provider) => void;
   model: string;
   setModel: (m: string) => void;
-  messages: any[];
-  sendMessage: (message: { text: string }, options?: any) => Promise<any>;
+  messages: UIMessage[];
+  sendMessage: (message: { text: string }, options?: Record<string, unknown>) => Promise<unknown>;
   status: string;
-  error: any;
+  error?: Error | null;
 }
 
 type Provider = "google" | "openai" | "anthropic";
@@ -106,10 +108,8 @@ export function DocumentChat({
     if (lastMsg && lastMsg.role === "assistant" && !processedProposalIdsRef.current.has(lastMsg.id)) {
       const textContent =
         lastMsg.parts
-          ?.map((p: any) => (p.type === "text" ? p.text : ""))
-          .join("") ||
-        (lastMsg as any).content ||
-        "";
+          ?.map((p) => (p.type === "text" && typeof p.text === "string" ? p.text : ""))
+          .join("") || "";
 
       const tagMatch = textContent.match(/<proposed_edit\s*([\s\S]*?)>([\s\S]*?)<\/proposed_edit>/)
         || textContent.match(/<proposed_document>([\s\S]*?)<\/proposed_document>/);
@@ -294,20 +294,20 @@ export function DocumentChat({
             {messages.map((m) => {
               const textContent =
                 m.parts
-                  ?.map((p: any) => (p.type === "text" ? p.text : ""))
-                  .join("") ||
-                (m as any).content ||
-                "";
+                  ?.map((p) => (p.type === "text" && typeof p.text === "string" ? p.text : ""))
+                  .join("") || "";
 
               const displayText = textContent
                 .replace(/<proposed_edit[\s\S]*?<\/proposed_edit>/g, "")
                 .replace(/<proposed_document>[\s\S]*?<\/proposed_document>/g, "")
                 .trim();
 
+              const messageRole = m.role === "user" ? "user" : "assistant";
+
               return (
                 <Message
                   key={m.id}
-                  role={m.role as any}
+                  role={messageRole}
                   avatar={m.role === "user" ? <User className="size-4" /> : <Bot className="size-4" />}
                 >
                   {displayText && (

@@ -2,13 +2,13 @@ import { createHash } from "node:crypto"
 import { SignJWT, jwtVerify } from "jose"
 import { cookies } from "next/headers"
 
-const COOKIE_NAME = "hayaku-settings-session"
+const COOKIE_NAME = "mesapad-settings-session"
 const MAX_AGE_SECONDS = 15 * 60
 
 function sessionKey() {
   const encryptionKey = process.env.TOTP_ENCRYPTION_KEY
   if (!encryptionKey) throw new Error("TOTP_ENCRYPTION_KEY não está configurada.")
-  return createHash("sha256").update(`hayaku-settings-session:${encryptionKey}`).digest()
+  return createHash("sha256").update(`mesapad-settings-session:${encryptionKey}`).digest()
 }
 
 export async function criarSessaoConfiguracoes() {

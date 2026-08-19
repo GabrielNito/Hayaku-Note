@@ -5,7 +5,6 @@ import { Node, mergeAttributes, InputRule } from "@tiptap/core"
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
 import { Plus, Trash2, Copy, Check, Table as TableIcon, Code, MoreVertical } from "lucide-react"
 import {
   DropdownMenu,
@@ -29,12 +28,14 @@ const TableBlockComponent = ({ node, updateAttributes, deleteNode }: { node: any
   const initialMarkdown = node.attrs.markdown || "| Coluna 1 | Coluna 2 |\n|---|---|\n| Valor 1 | Valor 2 |"
   const [tableData, setTableData] = React.useState<TableData>(() => parseMarkdownTable(initialMarkdown))
   const [rawMarkdown, setRawMarkdown] = React.useState<string>(initialMarkdown)
+  const [prevNodeMarkdown, setPrevNodeMarkdown] = React.useState<string>(node.attrs.markdown)
 
-  React.useEffect(() => {
+  if (node.attrs.markdown !== prevNodeMarkdown) {
+    setPrevNodeMarkdown(node.attrs.markdown)
     const md = node.attrs.markdown || "| Coluna 1 | Coluna 2 |\n|---|---|\n| Valor 1 | Valor 2 |"
     setTableData(parseMarkdownTable(md))
     setRawMarkdown(md)
-  }, [node.attrs.markdown])
+  }
 
   const commitTableData = (newData: TableData) => {
     const newMarkdown = serializeMarkdownTable(newData)

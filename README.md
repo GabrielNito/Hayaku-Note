@@ -1,10 +1,10 @@
-# Hayaku Note
+# Mesa-Pad
 
 Notes. No account, no login, no friction between you and the next note.
 
 Reading is always free. Writing — creating, saving, deleting, renaming — always asks for a 6-digit PIN, no exceptions.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/gabrielnito/hayaku-note&env=DATABASE_URL,PIN_HASH&envDescription=See+how+to+generate+each+value+in+the+section+below&project-name=hayaku-note&repository-name=hayaku-note)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Memlith/Mesa-Pad&env=DATABASE_URL,PIN_HASH&envDescription=See+how+to+generate+each+value+in+the+section+below&project-name=mesa-pad&repository-name=mesa-pad)
 ![Docker](https://img.shields.io/badge/docker-compose%20ready-blue?logo=docker)
 ![License](https://img.shields.io/badge/license-MIT-black)
 ![Stack](https://img.shields.io/badge/stack-Next.js%20%2B%20Bun%20%2B%20Prisma-black)
@@ -120,7 +120,7 @@ bun run generate:secrets 123456
 Ensure `DATABASE_URL` matches your local Postgres instance in `.env`:
 
 ```env
-DATABASE_URL="postgresql://hayaku:change_this_secret_password@localhost:5432/hayaku_db?schema=public"
+DATABASE_URL="postgresql://mesapad:change_this_secret_password@localhost:5432/mesapad_db?schema=public"
 ```
 
 **4. Run migrations & start dev server:**
@@ -152,6 +152,10 @@ This project exists to remove friction from taking notes in class: open the site
 ## Contributing
 
 Feel free to open issues or PRs, but the scope is deliberately small (see the "Out of scope" section in [`docs/SPEC.md`](./docs/SPEC.md)) — features like multi-user support, draggable blocks, or generic file attachments probably won't land here; that's what forks are for.
+
+## 🙏 Acknowledgements & Original Project
+
+This project is a fork and dockerized evolution of [**Hayaku Note**](https://github.com/gabrielnito/hayaku-note) created by [Gabriel Nito](https://github.com/gabrielnito). Special thanks to Gabriel for the original minimalist concept and architecture.
 
 ## License
 

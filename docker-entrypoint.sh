@@ -16,5 +16,5 @@ until npx prisma db push --skip-generate; do
   sleep 2
 done
 
-echo "✅ Database schema synced! Launching Hayaku Note..."
+echo "✅ Database schema synced! Launching Mesa-Pad..."
 exec "$@"

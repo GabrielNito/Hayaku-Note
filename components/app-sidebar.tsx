@@ -499,7 +499,7 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
         <div className="flex items-center justify-between mb-2">
           <Link href="/" className="font-semibold text-xs tracking-tight text-foreground flex items-center gap-1.5">
             <img src="/icon.ico" alt="Logo" className="size-4 rounded-sm object-contain" />
-            Hayaku Note
+            Mesa-Pad
           </Link>
           <div className="flex items-center gap-1">
             <button
@@ -576,7 +576,7 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
         </div>
         <div className="px-0.5">
           <span className="text-[10px] text-muted-foreground font-mono">
-            Hayaku Note v1.0
+            Mesa-Pad v1.0
           </span>
         </div>
       </SidebarFooter>
