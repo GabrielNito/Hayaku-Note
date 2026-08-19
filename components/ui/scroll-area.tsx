@@ -10,20 +10,6 @@ function ScrollArea({
   children,
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
-  const [mounted, setMounted] = React.useState(false)
-
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted) {
-    return (
-      <div className={cn("relative overflow-hidden", className)} {...(props as any)}>
-        <div className="h-full w-full overflow-auto">{children}</div>
-      </div>
-    )
-  }
-
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"

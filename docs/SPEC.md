@@ -1,6 +1,6 @@
-# Hayaku Note — Anotações de aula, sem login, sem lock-in
+# Mesa-Pad — Anotações de aula, sem login, sem lock-in
 
-> Nome sugerido: **Hayaku Note**. Troque à vontade — não afeta schema ou código.
+> Nome sugerido: **Mesa-Pad**. Troque à vontade — não afeta schema ou código.
 > Design system completo: ver `DESIGN.md`.
 
 ## 1. Objetivo

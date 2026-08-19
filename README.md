@@ -1,10 +1,11 @@
-# Hayaku Note
+# Mesa-Pad
 
 Notes. No account, no login, no friction between you and the next note.
 
 Reading is always free. Writing — creating, saving, deleting, renaming — always asks for a 6-digit PIN, no exceptions.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/gabrielnito/hayaku-note&env=DATABASE_URL,PIN_HASH&envDescription=See+how+to+generate+each+value+in+the+section+below&project-name=hayaku-note&repository-name=hayaku-note)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Memlith/Mesa-Pad&env=DATABASE_URL,PIN_HASH&envDescription=See+how+to+generate+each+value+in+the+section+below&project-name=mesa-pad&repository-name=mesa-pad)
+![Docker](https://img.shields.io/badge/docker-compose%20ready-blue?logo=docker)
 ![License](https://img.shields.io/badge/license-MIT-black)
 ![Stack](https://img.shields.io/badge/stack-Next.js%20%2B%20Bun%20%2B%20Prisma-black)
 
@@ -16,7 +17,7 @@ A minimal space built for one thing: taking notes in class. Folders and markdown
 
 - **No account.** There's no user, no session. What exists is a 6-digit PIN that any write action (create, save, delete, rename) asks for — on the spot, every time, never cached.
 - **No lock-in.** All content is stored as plain markdown. If you ever want to leave, your data is already in the format you want.
-- **No cost.** Runs entirely on the free tiers of Vercel + Neon.
+- **Self-hostable.** Run locally, on your VPS with Docker Compose, or serverless with Vercel + Neon.
 
 ## Status
 
@@ -24,52 +25,125 @@ This is v1 — fully implemented with folder/file tree, PIN-gated writes, securi
 
 ## Stack
 
-| | |
+| Component | Technology |
 |---|---|
 | Framework | [Next.js](https://nextjs.org) 16 (App Router) |
-| Runtime | [Bun](https://bun.sh) |
-| UI | [shadcn/ui](https://ui.shadcn.com) + Tailwind |
+| Runtime | [Bun](https://bun.sh) / [Node.js](https://nodejs.org) 22 |
+| UI | [shadcn/ui](https://ui.shadcn.com) + Tailwind CSS v4 |
 | Editor | [Tiptap](https://tiptap.dev) + `tiptap-markdown` |
 | ORM | [Prisma](https://www.prisma.io) |
-| Database | [Neon](https://neon.tech) (serverless Postgres) |
-| Deploy | [Vercel](https://vercel.com) |
+| Database | [PostgreSQL](https://www.postgresql.org) / [Neon](https://neon.tech) |
+| Containerization | Docker & Docker Compose |
 
 Full architecture in [`docs/SPEC.md`](./docs/SPEC.md), design system in [`docs/DESIGN.md`](./docs/DESIGN.md).
 
-## Run your own
+---
 
-**1. Fork this repo**, or click the deploy button above directly.
+## 🐳 Quick Start with Docker (Recommended)
 
-**2. Database:** create a free project on [Neon](https://neon.tech) and copy the connection string.
+Run the full stack (Next.js web application + PostgreSQL database with automated schema migrations) in two minutes:
 
-**3. Generate your PIN hash.** With Bun installed, from the project root:
+### 1. Clone & Setup Environment
 
 ```bash
-bun run scripts/generate-pin-hash.ts
-# prompts for a 6-digit PIN and prints the corresponding bcrypt hash
+cp .env.example .env
 ```
 
-**4. Environment variables:**
+### 2. Generate Secrets
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | Neon connection string |
-| `PIN_HASH` | Hash generated in step 3 — never put the plain PIN here |
+Generate your bcrypt PIN hash, settings setup key, and 32-byte TOTP key in one command:
 
-| `SETTINGS_SETUP_KEY` | One-time secret used to enroll Google Authenticator. Define it directly, for example: `SETTINGS_SETUP_KEY=uma-chave-longa-e-aleatoria` |
-| `TOTP_ENCRYPTION_KEY` | Base64 key with 32 bytes used to encrypt the Authenticator secret |
+```bash
+bun run generate:secrets 123456
+```
+*(Replace `123456` with your desired 6-digit PIN)*
 
-Generate `TOTP_ENCRYPTION_KEY` with `openssl rand -base64 32`, and add its output directly to the environment, for example: `TOTP_ENCRYPTION_KEY=<output-do-comando>`. Do not hash either settings variable. Remove the setup key after the first enrollment. To recover from a lost Authenticator, clear `totpSecretCriptografado` and `totpConfiguradoEm` in the single `Configuracao` record, set a new setup key, and enroll again.
+Copy the printed environment variables and paste them into your `.env` file.
 
-**5. Local dev:**
+> [!NOTE]
+> In `.env` for Docker Compose, `$` signs in the bcrypt hash are escaped as `$$` (e.g. `PIN_HASH=$$2b$$10$$...`) to prevent Docker variable interpolation.
+
+### 3. Start Containers
+
+```bash
+docker compose up -d
+```
+
+Open **`http://localhost:3000`** in your browser. Database migrations and schema syncing run automatically on container startup!
+
+### Useful Docker Commands
+
+```bash
+# View live container logs
+docker compose logs -f
+
+# Check container status
+docker compose ps
+
+# Start only the database container (for local dev with bun dev)
+docker compose up -d postgres
+
+# Stop containers
+docker compose down
+
+# Rebuild containers after code modifications
+docker compose up -d --build
+```
+
+---
+
+## 💻 Local Development
+
+**1. Install dependencies:**
 
 ```bash
 bun install
-bunx prisma migrate deploy
+```
+
+**2. Start database (Docker or local):**
+
+Run only the PostgreSQL container:
+
+```bash
+docker compose up -d postgres
+```
+
+*(Or use an existing local PostgreSQL instance / remote database like Neon).*
+
+**3. Configure `.env`:**
+
+```bash
+cp .env.example .env
+bun run generate:secrets 123456
+```
+
+Ensure `DATABASE_URL` matches your local Postgres instance in `.env`:
+
+```env
+DATABASE_URL="postgresql://mesapad:change_this_secret_password@localhost:5432/mesapad_db?schema=public"
+```
+
+**4. Run migrations & start dev server:**
+
+```bash
+bunx prisma db push
 bun dev
 ```
 
-**6. Deploy:** connect the repo to Vercel, set the two env vars, done. No extra CI, no build config — it's a standard Next.js app.
+---
+
+## ☁️ Deploy to Vercel
+
+1. Connect the repo to Vercel.
+2. Set up a free serverless Postgres instance on [Neon](https://neon.tech).
+3. Add environment variables in Vercel settings:
+   - `DATABASE_URL`
+   - `PIN_HASH`
+   - `SETTINGS_SETUP_KEY`
+   - `TOTP_ENCRYPTION_KEY`
+4. Deploy!
+
+---
 
 ## Why it exists
 
@@ -77,7 +151,11 @@ This project exists to remove friction from taking notes in class: open the site
 
 ## Contributing
 
-Feel free to open issues or PRs, but the scope is deliberately small (see the "Out of scope" section in [`SPEC.md`](./SPEC.md)) — features like multi-user support, draggable blocks, or generic file attachments probably won't land here; that's what forks are for.
+Feel free to open issues or PRs, but the scope is deliberately small (see the "Out of scope" section in [`docs/SPEC.md`](./docs/SPEC.md)) — features like multi-user support, draggable blocks, or generic file attachments probably won't land here; that's what forks are for.
+
+## 🙏 Acknowledgements & Original Project
+
+This project is a fork and dockerized evolution of [**Hayaku Note**](https://github.com/gabrielnito/hayaku-note) created by [Gabriel Nito](https://github.com/gabrielnito). Special thanks to Gabriel for the original minimalist concept and architecture.
 
 ## License
 

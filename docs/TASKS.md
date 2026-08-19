@@ -1,4 +1,4 @@
-# Tasks — Hayaku Note
+# Tasks — Mesa-Pad
 
 Backlog de features já especificadas em `SPEC.md`/`DESIGN.md`, mas fora do prompt inicial (que já está rodando). Cada item abaixo tem um prompt pronto — quando o núcleo estiver de pé, cola o prompt correspondente direto no OpenCode, sem precisar voltar aqui pra reformular nada.
 
@@ -13,7 +13,7 @@ Backlog de features já especificadas em `SPEC.md`/`DESIGN.md`, mas fora do prom
 **Prompt:**
 
 ```
-O projeto Hayaku Note já está implementado (schema, PIN, CRUD de No, editor Tiptap com
+O projeto Mesa-Pad já está implementado (schema, PIN, CRUD de No, editor Tiptap com
 save manual). Agora adicione suporte a colar imagem direto no editor, conforme a seção
 "Imagens" da seção 5 do SPEC.md e a nota de estilo de imagem no DESIGN.md:
 
@@ -46,7 +46,7 @@ URL da imagem.
 **Prompt:**
 
 ```
-O projeto Hayaku Note já está implementado (schema, PIN, CRUD de No, editor Tiptap,
+O projeto Mesa-Pad já está implementado (schema, PIN, CRUD de No, editor Tiptap,
 sidebar, tema). Agora adicione navegação 100% por teclado, conforme a seção 9 do
 SPEC.md e a seção "Quick Open e Command Bar" do DESIGN.md:
 

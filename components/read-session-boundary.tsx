@@ -5,7 +5,7 @@ import * as React from "react"
 export function ReadSessionBoundary() {
   React.useEffect(() => {
     const clearReadSession = () => {
-      document.cookie = "hayaku-read-active=; Max-Age=0; Path=/; SameSite=Strict"
+      document.cookie = "mesapad-read-active=; Max-Age=0; Path=/; SameSite=Strict"
     }
 
     window.addEventListener("beforeunload", clearReadSession)

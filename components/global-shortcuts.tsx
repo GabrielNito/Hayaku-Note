@@ -63,7 +63,7 @@ export function GlobalShortcuts({ arvore, exigirPinBusca = false, children }: Gl
 
     window.addEventListener("keydown", handleKeyDown, { capture: true })
     return () => window.removeEventListener("keydown", handleKeyDown, { capture: true })
-  }, [resolvedTheme, setTheme, quickOpenOpen, commandBarOpen])
+  }, [resolvedTheme, setTheme, quickOpenOpen, commandBarOpen, exigirPinBusca])
 
   async function confirmarBusca(pin: string) {
     const result = await liberarAcesso(pin, ["search"])

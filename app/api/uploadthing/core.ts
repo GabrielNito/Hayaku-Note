@@ -5,7 +5,7 @@ const f = createUploadthing();
 export const ourFileRouter = {
   noteImageUploader: f({ image: { maxFileSize: "4MB", maxFileCount: 5 } })
     .middleware(async () => {
-      return { userId: "hayaku-user" };
+      return { userId: "mesa-user" };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       console.log("Upload completed for userId:", metadata.userId);

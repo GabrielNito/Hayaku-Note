@@ -113,10 +113,11 @@ Seja claro, conciso, objetivo e prestativo.`;
     });
 
     return result.toUIMessageStreamResponse();
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro na API de chat:', error);
+    const message = error instanceof Error ? error.message : 'Erro interno no servidor de IA.';
     return NextResponse.json(
-      { error: error?.message || 'Erro interno no servidor de IA.' },
+      { error: message },
       { status: 500 }
     );
   }

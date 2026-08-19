@@ -74,7 +74,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useRouter } from "next/navigation"
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { uploadFiles } from "@/lib/uploadthing"
@@ -86,7 +85,6 @@ import { AiProposalBlock } from "@/components/extensions/ai-proposal-block"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
-import { ScrollArea } from "@/components/ui/scroll-area"
 
 const lowlight = createLowlight(common)
 lowlight.register("javascript", js)
@@ -135,7 +133,6 @@ export function NoteEditor({
   exigirPinExportar,
   exigirPinUploadImagem,
 }: NoteEditorProps) {
-  const router = useRouter()
   const { toggleSidebar } = useSidebar()
   const isMobile = useIsMobile()
   const [isDirty, setIsDirty] = React.useState(false)
@@ -143,7 +140,6 @@ export function NoteEditor({
   const [showPinModal, setShowPinModal] = React.useState(false)
   const [pendingSaveContent, setPendingSaveContent] = React.useState("")
   const [prevNoId, setPrevNoId] = React.useState(noId)
-  const [prevInitialContent, setPrevInitialContent] = React.useState(initialContent)
   const normalizedInitial = React.useMemo(() => normalizeMarkdownTables(initialContent), [initialContent])
   const [savedContent, setSavedContent] = React.useState(normalizedInitial)
   const [showExportPinModal, setShowExportPinModal] = React.useState(false)
@@ -172,7 +168,6 @@ export function NoteEditor({
 
   if (noId !== prevNoId) {
     setPrevNoId(noId)
-    setPrevInitialContent(initialContent)
     setSavedContent(normalizeMarkdownTables(initialContent))
     setIsDirty(false)
     setLastSavedTime(null)
@@ -340,7 +335,7 @@ export function NoteEditor({
     setIsChatOpen(true)
   }
 
-  async function handleToggleChat() {
+  const handleToggleChat = React.useCallback(async () => {
     if (isChatOpen) {
       setIsChatOpen(false)
       return
@@ -355,7 +350,7 @@ export function NoteEditor({
     } catch {
       setIsChatOpen(true)
     }
-  }
+  }, [isChatOpen])
 
   // Whenever active note changes (switching notes), update editor content and focus start
   React.useEffect(() => {
@@ -367,7 +362,7 @@ export function NoteEditor({
       }
       editor.commands.focus("start")
     }
-  }, [noId, editor])
+  }, [noId, editor, savedContent])
 
   // Global shortcuts for Save (Ctrl+S), Sidebar (Ctrl+Shift+B), Bold (Ctrl+B), and AI Chat (Ctrl+/)
   React.useEffect(() => {
@@ -497,7 +492,7 @@ export function NoteEditor({
           let isHeadingSection = false
           let found = false
 
-          doc.forEach((node: any, offset: number) => {
+          doc.forEach((node, offset) => {
             if (found && isHeadingSection) {
               if (node.type.name === "heading") {
                 isHeadingSection = false

@@ -48,7 +48,7 @@ export function validarCodigoTotp(secret: string, code: string) {
 }
 
 export function criarUriTotp(secret: string) {
-  const issuer = "Hayaku Note"
+  const issuer = "Mesa-Pad"
   return `otpauth://totp/${encodeURIComponent(`${issuer}:Administrador`)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`
 }
 

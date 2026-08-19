@@ -1,4 +1,4 @@
-# Design.md — Hayaku Note
+# Design.md — Mesa-Pad
 
 ## Princípios
 

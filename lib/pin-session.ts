@@ -2,13 +2,14 @@ import { createHash } from "node:crypto"
 import { SignJWT, jwtVerify } from "jose"
 import { cookies } from "next/headers"
 
-const COOKIE_NAME = "hayaku-pin-session"
-const ACTIVE_COOKIE_NAME = "hayaku-read-active"
+const COOKIE_NAME = "mesapad-pin-session"
+const ACTIVE_COOKIE_NAME = "mesapad-read-active"
 
 function sessionKey() {
   const pinHash = process.env.PIN_HASH
   if (!pinHash) throw new Error("PIN_HASH não está configurada.")
-  return createHash("sha256").update(`hayaku-pin-session:${pinHash}`).digest()
+  const normalized = pinHash.trim().replaceAll("$$", "$")
+  return createHash("sha256").update(`mesapad-pin-session:${normalized}`).digest()
 }
 
 export async function concederAcessosPin(scopes: string[]) {
