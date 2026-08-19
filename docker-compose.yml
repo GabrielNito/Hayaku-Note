@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hayaku-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hayaku}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hayakupass}
+      POSTGRES_DB: ${POSTGRES_DB:-hayaku_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-hayaku} -d $${POSTGRES_DB:-hayaku_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hayaku-app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-hayaku}:${POSTGRES_PASSWORD:-hayakupass}@postgres:5432/${POSTGRES_DB:-hayaku_db}?schema=public
+      PIN_HASH: ${PIN_HASH}
+      SETTINGS_SETUP_KEY: ${SETTINGS_SETUP_KEY}
+      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

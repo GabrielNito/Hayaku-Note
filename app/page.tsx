@@ -7,6 +7,8 @@ import { AccessGate } from "@/components/access-gate"
 import { temAcessosPin } from "@/lib/pin-session"
 import { obterPoliticasAtuais } from "@/lib/security-policies"
 
+export const dynamic = "force-dynamic"
+
 export const metadata = {
   title: "Hayaku Note",
 }

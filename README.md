@@ -69,7 +69,21 @@ bunx prisma migrate deploy
 bun dev
 ```
 
-**6. Deploy:** connect the repo to Vercel, set the two env vars, done. No extra CI, no build config — it's a standard Next.js app.
+**6. Run with Docker (App + PostgreSQL Database):**
+
+```bash
+# 1. Copy env file
+cp .env.example .env
+
+# 2. Generate secrets and add them to .env
+bun run generate:secrets 123456
+
+# 3. Start containers
+docker compose up -d
+```
+Open `http://localhost:3000`. Database migrations and table syncing run automatically on container startup!
+
+**7. Deploy:** connect the repo to Vercel, set the two env vars, done. No extra CI, no build config — it's a standard Next.js app.
 
 ## Why it exists
 

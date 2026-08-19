@@ -10,6 +10,7 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
+    "generate:secrets": "bun run scripts/generate-docker-secrets.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
