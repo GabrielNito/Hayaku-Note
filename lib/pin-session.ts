@@ -8,7 +8,8 @@ const ACTIVE_COOKIE_NAME = "hayaku-read-active"
 function sessionKey() {
   const pinHash = process.env.PIN_HASH
   if (!pinHash) throw new Error("PIN_HASH não está configurada.")
-  return createHash("sha256").update(`hayaku-pin-session:${pinHash}`).digest()
+  const normalized = pinHash.trim().replaceAll("$$", "$")
+  return createHash("sha256").update(`hayaku-pin-session:${normalized}`).digest()
 }
 
 export async function concederAcessosPin(scopes: string[]) {

@@ -10,8 +10,8 @@ export async function validarPin(pin: string): Promise<boolean> {
     return false
   }
   try {
-    let cleanHash = pinHash.trim()
-    if (!cleanHash.startsWith("$2b$")) {
+    let cleanHash = pinHash.trim().replaceAll("$$", "$")
+    if (!cleanHash.startsWith("$2b$") && !cleanHash.startsWith("$2a$") && !cleanHash.startsWith("$2y$")) {
       cleanHash = "$2b$10$" + cleanHash
     }
     return await bcrypt.compare(pin.trim(), cleanHash)
