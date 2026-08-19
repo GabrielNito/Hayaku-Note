@@ -80,6 +80,9 @@ docker compose logs -f
 # Check container status
 docker compose ps
 
+# Start only the database container (for local dev with bun dev)
+docker compose up -d postgres
+
 # Stop containers
 docker compose down
 
@@ -89,7 +92,7 @@ docker compose up -d --build
 
 ---
 
-## 💻 Local Development (Without Docker)
+## 💻 Local Development
 
 **1. Install dependencies:**
 
@@ -97,16 +100,30 @@ docker compose up -d --build
 bun install
 ```
 
-**2. Configure `.env`:**
+**2. Start database (Docker or local):**
 
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/hayaku_db"
-PIN_HASH="<bcrypt-hash-generated-by-scripts/generate-docker-secrets.ts>"
-SETTINGS_SETUP_KEY="<random-setup-key>"
-TOTP_ENCRYPTION_KEY="<32-byte-base64-key>"
+Run only the PostgreSQL container:
+
+```bash
+docker compose up -d postgres
 ```
 
-**3. Run migrations & start dev server:**
+*(Or use an existing local PostgreSQL instance / remote database like Neon).*
+
+**3. Configure `.env`:**
+
+```bash
+cp .env.example .env
+bun run generate:secrets 123456
+```
+
+Ensure `DATABASE_URL` matches your local Postgres instance in `.env`:
+
+```env
+DATABASE_URL="postgresql://hayaku:change_this_secret_password@localhost:5432/hayaku_db?schema=public"
+```
+
+**4. Run migrations & start dev server:**
 
 ```bash
 bunx prisma db push
