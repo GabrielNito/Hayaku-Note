@@ -3,6 +3,7 @@
 A minimal, personal, zero-friction markdown notebook with instant keyboard navigation, granular security policies, and built-in AI assistance.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/gabrielnito/hayaku-note&env=DATABASE_URL,PIN_HASH,UPLOADTHING_TOKEN,SETTINGS_SETUP_KEY,TOTP_ENCRYPTION_KEY&project-name=hayaku-note&repository-name=hayaku-note)
+![Docker](https://img.shields.io/badge/docker-compose%20ready-blue?logo=docker)
 ![License](https://img.shields.io/badge/license-MIT-black)
 ![Stack](https://img.shields.io/badge/stack-Next.js%20%2B%20Bun%20%2B%20Prisma%20%2B%20Tailwind-black)
 
@@ -53,9 +54,49 @@ A minimal, personal, zero-friction markdown notebook with instant keyboard navig
 
 Full specification in [`docs/SPEC.md`](./docs/SPEC.md) and design system in [`docs/DESIGN.md`](./docs/DESIGN.md).
 
+## 🐳 Quick Start with Docker (Self-Hosted)
+
+Run the full stack (Next.js web application + PostgreSQL database with automated schema migrations) in two minutes:
+
+### 1. Clone & Setup Environment
+```bash
+cp .env.example .env
+```
+
+### 2. Generate Secrets
+Generate your bcrypt PIN hash, settings setup key, and 32-byte TOTP key in one command:
+```bash
+bun run generate:secrets 123456
+```
+*(Replace `123456` with your desired 6-digit PIN)*
+
+Copy the printed environment variables and paste them into your `.env` file.
+
+### 3. Start Containers
+```bash
+docker compose up -d
+```
+
+Open **`http://localhost:3000`** in your browser. Database schema migrations run automatically on container startup!
+
+#### Useful Docker Commands
+```bash
+# View live container logs
+docker compose logs -f
+
+# Start only the database container (for local dev with bun dev)
+docker compose up -d postgres
+
+# Stop containers
+docker compose down
+
+# Rebuild containers after code modifications
+docker compose up -d --build
+```
+
 ---
 
-## Getting Started / Run Your Own
+## 💻 Local Development & Vercel Deploy
 
 ### 1. Prerequisites
 - [Bun](https://bun.sh) installed locally

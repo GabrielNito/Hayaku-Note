@@ -3,6 +3,7 @@
 Um caderno de anotações minimalista, pessoal e sem atrito, com navegação rápida por teclado, políticas de segurança granulares e assistente de IA integrado.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/gabrielnito/hayaku-note&env=DATABASE_URL,PIN_HASH,UPLOADTHING_TOKEN,SETTINGS_SETUP_KEY,TOTP_ENCRYPTION_KEY&project-name=hayaku-note&repository-name=hayaku-note)
+![Docker](https://img.shields.io/badge/docker-compose%20ready-blue?logo=docker)
 ![License](https://img.shields.io/badge/license-MIT-black)
 ![Stack](https://img.shields.io/badge/stack-Next.js%20%2B%20Bun%20%2B%20Prisma%20%2B%20Tailwind-black)
 
@@ -53,9 +54,49 @@ O **Hayaku Note** foi criado para eliminar o atrito de tomar notas e organizar c
 
 Arquitetura detalhada em [`docs/SPEC.md`](./SPEC.md) e design system em [`docs/DESIGN.md`](./DESIGN.md).
 
+## 🐳 Início Rápido com Docker (Auto-hospedado)
+
+Execute a stack completa (Aplicação Next.js + Banco PostgreSQL com migrações automáticas de schema) em dois minutos:
+
+### 1. Clonar e Configurar o Ambiente
+```bash
+cp .env.example .env
+```
+
+### 2. Gerar Chaves e Segredos
+Gere o hash bcrypt do seu PIN, chave de setup e chave TOTP de 32 bytes em um único comando:
+```bash
+bun run generate:secrets 123456
+```
+*(Substitua `123456` pelo PIN de 6 dígitos que você deseja)*
+
+Copie as variáveis exibidas no terminal e cole no seu arquivo `.env`.
+
+### 3. Iniciar os Containers
+```bash
+docker compose up -d
+```
+
+Acesse **`http://localhost:3000`** no seu navegador. O banco e o schema são sincronizados automaticamente na inicialização!
+
+#### Comandos Úteis do Docker
+```bash
+# Ver logs em tempo real
+docker compose logs -f
+
+# Iniciar apenas o container do PostgreSQL (para rodar localmente com bun dev)
+docker compose up -d postgres
+
+# Parar containers
+docker compose down
+
+# Reconstruir imagens após alterações no código
+docker compose up -d --build
+```
+
 ---
 
-## Como Rodar / Criar Sua Instância
+## 💻 Desenvolvimento Local e Deploy na Vercel
 
 ### 1. Pré-requisitos
 - [Bun](https://bun.sh) instalado na máquina
