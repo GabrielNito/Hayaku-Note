@@ -83,6 +83,7 @@ import { liberarAcesso } from "@/actions/acesso"
 import { verificarAcessoChatAi } from "@/actions/configuracoes"
 import { DocumentChat } from "@/components/document-chat"
 import { AiProposalBlock } from "@/components/extensions/ai-proposal-block"
+import { DocumentIndex } from "@/components/document-index"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
@@ -692,12 +693,13 @@ export function NoteEditor({
 
       {/* Content area: editor + side chat / mobile sheet */}
       <div className="flex-1 flex flex-row min-h-0 overflow-hidden relative">
+        <DocumentIndex editor={editor} isChatOpen={isChatOpen} />
         {isChatOpen && !isMobile ? (
           <ResizablePanelGroup orientation="horizontal" className="h-full w-full">
             <ResizablePanel defaultSize={60} minSize={30}>
-              <div className="h-full w-full overflow-y-auto overflow-x-hidden">
-                <main className="px-3 sm:px-6 py-8 pb-48 flex justify-center min-h-full w-full box-border overflow-x-hidden">
-                  <div className="w-full max-w-180 font-sans text-foreground box-border min-w-0">
+              <div className="h-full w-full overflow-y-auto overflow-x-hidden relative">
+                <main className="px-3 sm:px-6 py-8 pb-48 flex justify-center min-h-full w-full box-border">
+                  <div className="relative w-full max-w-180 font-sans text-foreground box-border min-w-0">
                     <EditorContent editor={editor} />
                   </div>
                 </main>
@@ -724,9 +726,9 @@ export function NoteEditor({
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : (
-          <div className="h-full w-full overflow-y-auto overflow-x-hidden">
-            <main className="px-3 sm:px-6 py-8 pb-48 flex justify-center min-h-full w-full box-border overflow-x-hidden">
-              <div className="w-full max-w-180 font-sans text-foreground box-border min-w-0">
+          <div className="h-full w-full overflow-y-auto overflow-x-hidden relative">
+            <main className="px-3 sm:px-6 py-8 pb-48 flex justify-center min-h-full w-full box-border">
+              <div className="relative w-full max-w-180 font-sans text-foreground box-border min-w-0">
                 <EditorContent editor={editor} />
               </div>
             </main>
