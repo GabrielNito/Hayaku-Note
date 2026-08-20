@@ -222,8 +222,8 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-            <div className="flex items-start border rounded-md px-3 py-2 bg-background">
-              <span className="text-xs text-muted-foreground font-mono mr-2 mt-1">$</span>
+            <div className="flex items-start border border-border/70 rounded-xl px-3.5 py-2.5 bg-background/90 focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-200">
+              <span className="text-xs text-muted-foreground font-mono mr-2.5 mt-1 select-none font-semibold">$</span>
               <textarea
                 value={inputVal}
                 onChange={(e) => {
@@ -233,7 +233,7 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder="touch arquivo | mkdir pasta | rm caminho | cp orig dest | mv orig dest"
-                className="border-0 shadow-none font-mono text-sm focus-visible:ring-0 px-0 w-full bg-transparent resize-none min-h-[56px] max-h-32 outline-none"
+                className="border-0 shadow-none font-mono text-sm focus-visible:ring-0 px-0 w-full bg-transparent resize-none min-h-[56px] max-h-32 outline-none leading-relaxed"
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"
@@ -243,30 +243,30 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
             </div>
 
             {suggestions.length > 0 && (
-              <div className="border rounded-md bg-popover text-popover-foreground shadow-md max-h-48 overflow-y-auto p-1 flex flex-col gap-0.5">
+              <div className="border border-border/60 rounded-xl bg-popover text-popover-foreground shadow-lg max-h-48 overflow-y-auto p-1.5 flex flex-col gap-0.5 animate-in fade-in-0 slide-in-from-top-1 duration-200">
                 {suggestions.map((item) => (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => handleSelectSuggestion(item)}
-                    className="flex items-center justify-between px-2.5 py-1.5 text-xs rounded hover:bg-accent hover:text-accent-foreground text-left font-mono cursor-pointer"
+                    className="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg hover:bg-accent hover:text-accent-foreground text-left font-mono cursor-pointer ios-press transition-colors duration-150"
                   >
-                    <span>{item.nome}{item.tipo === "PASTA" ? "/" : ""}</span>
-                    <span className="text-[10px] text-muted-foreground">{item.tipo}</span>
+                    <span className="font-medium">{item.nome}{item.tipo === "PASTA" ? "/" : ""}</span>
+                    <span className="text-[10px] text-muted-foreground/80 px-1.5 py-0.5 rounded bg-muted font-sans">{item.tipo}</span>
                   </button>
                 ))}
               </div>
             )}
 
             {error && (
-              <p className="text-xs text-destructive font-mono px-1">
+              <p className="text-xs text-destructive font-mono px-1 animate-ios-shake">
                 {error}
               </p>
             )}
 
             <div className="flex justify-between items-center px-1 text-[11px] text-muted-foreground font-mono">
-              <span>Tab para autocompletar e ciclar entre opções</span>
-              <span>Pressione Enter para executar</span>
+              <span>Tab para autocompletar e ciclar</span>
+              <span>Enter para executar</span>
             </div>
           </form>
         </DialogContent>

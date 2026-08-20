@@ -115,7 +115,10 @@ const TableBlockComponent = ({ node, updateAttributes, deleteNode }: { node: any
     <NodeViewWrapper className="my-4 rounded-lg border border-border/60 bg-card overflow-hidden shadow-sm group">
       <Tabs defaultValue="visual" value={activeTab} onValueChange={setActiveTab}>
         {/* Top bar */}
-        <div className="h-9 px-3.5 bg-muted/30 border-b border-border/40 flex items-center justify-between text-xs font-sans text-muted-foreground select-none">
+        <div
+          contentEditable={false}
+          className="h-9 px-3.5 bg-muted/30 border-b border-border/40 flex items-center justify-between text-xs font-sans text-muted-foreground select-none"
+        >
           <div className="flex items-center gap-2">
             <TabsList className="h-6">
               <TabsTrigger value="visual" className="h-5 px-2 text-xs gap-1">
@@ -132,7 +135,7 @@ const TableBlockComponent = ({ node, updateAttributes, deleteNode }: { node: any
 
           <div className="flex items-center gap-1.5">
             <DropdownMenu>
-              <DropdownMenuTrigger className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded flex items-center justify-center cursor-pointer outline-none">
+              <DropdownMenuTrigger className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded flex items-center justify-center cursor-pointer outline-none ios-press">
                 <MoreVertical className="size-3.5" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44 font-sans text-xs">
@@ -149,8 +152,8 @@ const TableBlockComponent = ({ node, updateAttributes, deleteNode }: { node: any
                 <DropdownMenuItem onClick={handleCopy} className="cursor-pointer">
                   {copied ? (
                     <>
-                      <Check className="size-3.5 mr-2 text-green-500" />
-                      <span className="text-green-500">Copiado</span>
+                      <Check className="size-3.5 mr-2 text-emerald-500 animate-ios-pop" />
+                      <span className="text-emerald-500 animate-ios-pop">Copiado</span>
                     </>
                   ) : (
                     <>

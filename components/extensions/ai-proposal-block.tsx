@@ -80,11 +80,11 @@ function AiProposalComponent({ node, getPos, editor }: ReactNodeViewProps) {
   }, [handleAccept, handleReject])
 
   return (
-    <NodeViewWrapper className="my-6 rounded-xl border border-emerald-500/40 bg-emerald-500/5 dark:bg-emerald-950/20 shadow-md overflow-hidden transition-all select-text font-sans">
+    <NodeViewWrapper className="my-6 rounded-2xl border border-emerald-500/40 bg-emerald-500/5 dark:bg-emerald-950/20 shadow-lg overflow-hidden transition-all duration-300 select-text font-sans relative">
       {/* Header Bar */}
       <div className="bg-emerald-500/10 dark:bg-emerald-950/40 border-b border-emerald-500/30 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 select-none">
         <div className="flex items-center gap-2 text-xs font-sans text-foreground">
-          <div className="p-1 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
+          <div className="p-1 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0 animate-ios-pulse-soft">
             <Sparkles className="size-4 animate-pulse" />
           </div>
           <div className="flex items-center gap-2">
@@ -114,7 +114,7 @@ function AiProposalComponent({ node, getPos, editor }: ReactNodeViewProps) {
             variant="ghost"
             size="sm"
             onClick={() => setShowDiff(!showDiff)}
-            className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground px-2"
+            className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground px-2 ios-press"
             title="Alternar entre Visualização Formatada e Diff"
           >
             <Eye className="size-3.5" />
@@ -127,7 +127,7 @@ function AiProposalComponent({ node, getPos, editor }: ReactNodeViewProps) {
             variant="outline"
             size="sm"
             onClick={handleReject}
-            className="h-7 text-xs gap-1 border-rose-500/30 text-rose-700 dark:text-rose-300 hover:bg-rose-500/15 px-2.5"
+            className="h-7 text-xs gap-1 border-rose-500/30 text-rose-700 dark:text-rose-300 hover:bg-rose-500/15 px-2.5 ios-press"
             title="Rejeitar alteração"
           >
             <X className="size-3.5 text-rose-500" />
@@ -138,7 +138,7 @@ function AiProposalComponent({ node, getPos, editor }: ReactNodeViewProps) {
             type="button"
             size="sm"
             onClick={handleAccept}
-            className="h-7 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-medium shadow-xs px-2.5"
+            className="h-7 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-medium shadow-xs px-2.5 ios-press"
             title="Aceitar e aplicar no documento"
           >
             <Check className="size-3.5" />

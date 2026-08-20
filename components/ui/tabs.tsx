@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { motion } from "motion/react"
 import { cn } from "@/lib/utils"
 
 interface TabsProps {
@@ -14,10 +15,12 @@ interface TabsProps {
 const TabsContext = React.createContext<{
   value: string
   onValueChange: (value: string) => void
-}>({ value: "", onValueChange: () => {} })
+  tabGroupId: string
+}>({ value: "", onValueChange: () => {}, tabGroupId: "" })
 
 export function Tabs({ defaultValue, value, onValueChange, children, className }: TabsProps) {
   const [tabState, setTabState] = React.useState(defaultValue)
+  const tabGroupId = React.useId()
   const currentTab = value !== undefined ? value : tabState
   const handleValueChange = React.useCallback((val: string) => {
     if (value === undefined) {
@@ -27,7 +30,7 @@ export function Tabs({ defaultValue, value, onValueChange, children, className }
   }, [value, onValueChange])
 
   return (
-    <TabsContext.Provider value={{ value: currentTab, onValueChange: handleValueChange }}>
+    <TabsContext.Provider value={{ value: currentTab, onValueChange: handleValueChange, tabGroupId }}>
       <div className={cn("flex flex-col", className)}>{children}</div>
     </TabsContext.Provider>
   )
@@ -37,7 +40,7 @@ export function TabsList({ className, children, ...props }: React.ComponentProps
   return (
     <div
       data-slot="tabs-list"
-      className={cn("inline-flex h-7 items-center justify-center rounded-md bg-muted p-0.5 text-muted-foreground", className)}
+      className={cn("inline-flex h-7 items-center justify-center rounded-lg bg-muted/70 p-0.5 text-muted-foreground", className)}
       {...props}
     >
       {children}
@@ -46,7 +49,7 @@ export function TabsList({ className, children, ...props }: React.ComponentProps
 }
 
 export function TabsTrigger({ className, value, children, ...props }: React.ComponentProps<"button"> & { value: string }) {
-  const { value: selectedValue, onValueChange } = React.useContext(TabsContext)
+  const { value: selectedValue, onValueChange, tabGroupId } = React.useContext(TabsContext)
   const isSelected = selectedValue === value
 
   return (
@@ -56,12 +59,20 @@ export function TabsTrigger({ className, value, children, ...props }: React.Comp
       data-state={isSelected ? "active" : "inactive"}
       onClick={() => onValueChange(value)}
       className={cn(
-        "inline-flex items-center justify-center rounded px-2.5 py-1 text-xs font-medium transition-all outline-none select-none cursor-pointer disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs",
+        "relative inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-medium transition-colors duration-150 outline-none select-none cursor-pointer disabled:pointer-events-none disabled:opacity-50 z-10",
+        isSelected ? "text-foreground font-medium" : "text-muted-foreground hover:text-foreground",
         className
       )}
       {...props}
     >
-      {children}
+      {isSelected && (
+        <motion.div
+          layoutId={`segmentedControl-${tabGroupId}`}
+          className="absolute inset-0 rounded-md bg-background shadow-xs -z-10"
+          transition={{ type: "spring", stiffness: 450, damping: 35 }}
+        />
+      )}
+      <span className="relative z-10 flex items-center gap-1.5">{children}</span>
     </button>
   )
 }
