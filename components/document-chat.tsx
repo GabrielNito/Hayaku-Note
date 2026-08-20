@@ -216,7 +216,7 @@ export function DocumentChat({
                 <span className="truncate">{providerNames[provider]}</span>
                 <ChevronDown className="size-3.5 opacity-50 shrink-0" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuContent align="start" className="w-(--anchor-width) min-w-(--anchor-width)">
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className="text-[10px]">Provedor</DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -243,7 +243,7 @@ export function DocumentChat({
                 <span className="truncate">{PROVIDER_MODELS[provider].find(m => m.id === model)?.name || model}</span>
                 <ChevronDown className="size-3.5 opacity-50 shrink-0" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuContent align="start" className="w-(--anchor-width) min-w-(--anchor-width)">
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className="text-[10px]">Modelo</DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -321,11 +321,11 @@ export function DocumentChat({
                       <Button
                         variant="ghost"
                         size="icon-xs"
-                        className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                        className="h-6 w-6 text-muted-foreground hover:text-foreground ios-press"
                         onClick={() => copyToClipboard(displayText || textContent, m.id)}
                         title="Copiar resposta"
                       >
-                        {copiedId === m.id ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
+                        {copiedId === m.id ? <Check className="size-3 text-emerald-500 animate-ios-pop" /> : <Copy className="size-3" />}
                       </Button>
                     </div>
                   )}
@@ -345,7 +345,7 @@ export function DocumentChat({
         )}
 
         {error && (
-          <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-xs border border-destructive/20">
+          <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-xs border border-destructive/20 animate-ios-shake">
             <strong>Erro:</strong> {error.message || "Ocorreu um erro ao processar a requisição."}
           </div>
         )}
@@ -358,9 +358,9 @@ export function DocumentChat({
           onChange={(e) => setInput(e.target.value)}
           placeholder={isCurrentKeyConfigured ? "Pergunte algo sobre o documento..." : "Configure a API key nas Configurações"}
           disabled={!isCurrentKeyConfigured || isLoading}
-          className="flex-1 text-xs"
+          className="flex-1 text-xs rounded-lg"
         />
-        <Button type="submit" disabled={isLoading || !input.trim() || !isCurrentKeyConfigured} size="icon" className="shrink-0">
+        <Button type="submit" disabled={isLoading || !input.trim() || !isCurrentKeyConfigured} size="icon" className="shrink-0 ios-press">
           {isLoading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
         </Button>
       </form>

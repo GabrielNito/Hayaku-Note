@@ -33,6 +33,7 @@ export function PinDialog({
   const [error, setError] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState("")
   const [shake, setShake] = React.useState(false)
+  const inputRef = React.useRef<HTMLInputElement>(null)
 
   const [prevOpen, setPrevOpen] = React.useState(open)
   if (open !== prevOpen) {
@@ -46,6 +47,15 @@ export function PinDialog({
     }
   }
 
+  React.useEffect(() => {
+    if (open) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus()
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [open])
+
   async function handleSubmit(e?: React.FormEvent) {
     if (e) e.preventDefault()
     if (pin.length !== 6) return
@@ -58,9 +68,13 @@ export function PinDialog({
       await onSuccess(pin)
       onOpenChange(false)
     } catch (err: unknown) {
+      setPin("")
       setError(true)
       setShake(true)
-      setTimeout(() => setShake(false), 500)
+      setTimeout(() => {
+        setShake(false)
+        inputRef.current?.focus()
+      }, 400)
       if (err instanceof Error) {
         setErrorMessage(err.message)
       } else {
@@ -73,7 +87,7 @@ export function PinDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className={`sm:max-w-100 px-0 ${shake ? "animate-bounce" : ""}`}>
+      <AlertDialogContent className={`sm:max-w-100 px-0 transition-all duration-200 ${shake ? "animate-ios-shake ring-2 ring-destructive/50" : ""}`}>
         <AlertDialogHeader className="px-4">
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
@@ -81,6 +95,7 @@ export function PinDialog({
 
         <form onSubmit={handleSubmit} className="flex flex-col items-center gap-4 p-0">
           <InputOTP
+            ref={inputRef}
             maxLength={6}
             value={pin}
             onChange={(value) => {
@@ -101,18 +116,19 @@ export function PinDialog({
           </InputOTP>
 
           {error && (
-            <p className="text-xs text-destructive font-mono">
+            <p className="text-xs text-destructive font-mono animate-ios-pop">
               {errorMessage || "PIN incorreto."}
             </p>
           )}
 
           <AlertDialogFooter className="w-full flex justify-end gap-2 pt-2">
-            <AlertDialogCancel type="button" disabled={loading}>
+            <AlertDialogCancel type="button" disabled={loading} className="ios-press">
               Cancelar
             </AlertDialogCancel>
             <Button
               type="submit"
               disabled={pin.length !== 6 || loading}
+              className="ios-press"
             >
               {loading ? "Validando..." : "Confirmar"}
             </Button>

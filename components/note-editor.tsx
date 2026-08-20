@@ -589,18 +589,18 @@ export function NoteEditor({
   return (
     <div className="flex flex-col h-screen w-full bg-background overflow-hidden">
       {/* Top fine bar: breadcrumb + save status */}
-      <header className="h-11 border-b border-border/60 flex items-center justify-between px-4 shrink-0 bg-background/80 backdrop-blur-sm">
+      <header className="h-11 border-b border-border/60 flex items-center justify-between px-4 shrink-0 bg-background/80 backdrop-blur-md">
         <div className="flex items-center gap-2 overflow-hidden text-xs text-muted-foreground font-sans">
-          <SidebarTrigger className="h-7 w-7 text-muted-foreground hover:text-foreground mr-1" />
+          <SidebarTrigger className="h-7 w-7 text-muted-foreground hover:text-foreground mr-1 ios-press" />
           <div className="hidden sm:flex items-center gap-2 overflow-hidden">
             {caminhoBreadcrumb.map((item, index) => (
               <React.Fragment key={item.id}>
-                {index > 0 && <span className="text-border">/</span>}
+                {index > 0 && <span className="text-border/60">/</span>}
                 <span
-                  className={`truncate ${
+                  className={`truncate transition-colors ${
                     index === caminhoBreadcrumb.length - 1
                       ? "text-foreground font-medium"
-                      : ""
+                      : "hover:text-foreground"
                   }`}
                 >
                   {item.nome}
@@ -610,7 +610,8 @@ export function NoteEditor({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Quick Open - desktop only */}
           <Button
             type="button"
             size="icon-sm"
@@ -618,11 +619,12 @@ export function NoteEditor({
             onClick={() => window.dispatchEvent(new CustomEvent("open-quick-open"))}
             aria-label="Busca rápida (Quick Open)"
             title="Busca Rápida (Ctrl+P)"
-            className="h-7 w-7"
+            className="h-7 w-7 ios-press hidden sm:inline-flex"
           >
             <Search className="size-3.5" />
           </Button>
 
+          {/* Command Bar - desktop only */}
           <Button
             type="button"
             size="icon-sm"
@@ -630,11 +632,12 @@ export function NoteEditor({
             onClick={() => window.dispatchEvent(new CustomEvent("open-command-bar"))}
             aria-label="Command Bar (CLI)"
             title="Command Bar (Ctrl+Shift+P)"
-            className="h-7 w-7"
+            className="h-7 w-7 ios-press hidden sm:inline-flex"
           >
             <Terminal className="size-3.5" />
           </Button>
 
+          {/* Table Insert */}
           <Button
             type="button"
             size="icon-sm"
@@ -644,25 +647,35 @@ export function NoteEditor({
             }}
             aria-label="Inserir Tabela"
             title="Inserir Tabela (3x3)"
-            className="h-7 w-7"
+            className="h-7 w-7 ios-press"
           >
             <TableIcon className="size-3.5" />
           </Button>
 
-          <span className="text-xs font-mono text-muted-foreground transition-opacity duration-300 hidden sm:inline">
-            {isDirty
-              ? "Alterações não salvas"
-              : lastSavedTime
-              ? `Salvo às ${lastSavedTime}`
-              : "Salvo"}
-          </span>
+          {/* Animated Save Status Badge - visible on mobile and desktop */}
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-border/50 bg-muted/30 text-[10px] sm:text-[11px] font-sans text-muted-foreground transition-all duration-300 max-w-[120px] sm:max-w-none">
+            <span
+              className={`size-1.5 rounded-full transition-colors duration-300 shrink-0 ${
+                isDirty
+                  ? "bg-amber-500 animate-pulse"
+                  : "bg-emerald-500"
+              }`}
+            />
+            <span className="truncate">
+              {isDirty
+                ? "Não salvo"
+                : lastSavedTime
+                ? `Salvo ${lastSavedTime}`
+                : "Salvo"}
+            </span>
+          </div>
 
           <Button
             size="sm"
             variant="outline"
             onClick={handleTriggerSave}
             disabled={!isDirty}
-            className="h-7 text-xs font-sans px-2.5 disabled:opacity-50"
+            className="h-7 text-xs font-sans px-2 sm:px-2.5 disabled:opacity-50 ios-press shrink-0"
           >
             Salvar
           </Button>
@@ -671,10 +684,10 @@ export function NoteEditor({
             size="sm"
             variant={isChatOpen ? "secondary" : "outline"}
             onClick={handleToggleChat}
-            className="h-7 text-xs font-sans px-2.5 gap-1.5"
+            className="h-7 text-xs font-sans px-2.5 gap-1.5 ios-press transition-all duration-200"
             title="Alternar Chat com IA"
           >
-            <Sparkles className="size-3.5 text-primary" />
+            <Sparkles className={`size-3.5 text-primary ${isChatOpen ? "animate-pulse" : ""}`} />
             <span>IA</span>
           </Button>
 
@@ -685,6 +698,7 @@ export function NoteEditor({
             onClick={() => exigirPinExportar ? setShowExportPinModal(true) : handleExportMarkdown()}
             aria-label="Exportar nota em Markdown"
             title="Exportar em Markdown"
+            className="h-7 w-7 ios-press"
           >
             <Download />
           </Button>

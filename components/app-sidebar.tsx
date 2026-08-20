@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
+import { motion, AnimatePresence } from "motion/react"
 import {
   ChevronRight,
   MoreVertical,
@@ -61,6 +62,7 @@ function hasActiveChild(node: NoItem, activeId?: string): boolean {
 function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
   const router = useRouter()
   const [isOpen, setIsOpen] = React.useState(() => hasActiveChild(item, activeId))
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false)
 
   const isActive = activeId === item.id
   const isPasta = item.tipo === TipoNo.PASTA
@@ -77,6 +79,65 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
     filesData?: { nome: string; conteudo: string }[]
   } | null>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  // Long press for mobile touch devices
+  const longPressTimerRef = React.useRef<NodeJS.Timeout | null>(null)
+  const isLongPressRef = React.useRef(false)
+  const touchStartPosRef = React.useRef<{ x: number; y: number } | null>(null)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    isLongPressRef.current = false
+    const touch = e.touches[0]
+    if (touch) {
+      touchStartPosRef.current = { x: touch.clientX, y: touch.clientY }
+    }
+    longPressTimerRef.current = setTimeout(() => {
+      isLongPressRef.current = true
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        try {
+          navigator.vibrate(50)
+        } catch {}
+      }
+      setIsMenuOpen(true)
+    }, 450)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartPosRef.current || !longPressTimerRef.current) return
+    const touch = e.touches[0]
+    if (touch) {
+      const dx = Math.abs(touch.clientX - touchStartPosRef.current.x)
+      const dy = Math.abs(touch.clientY - touchStartPosRef.current.y)
+      if (dx > 8 || dy > 8) {
+        clearTimeout(longPressTimerRef.current)
+        longPressTimerRef.current = null
+      }
+    }
+  }
+
+  const handleTouchEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
+
+  const handleNodeClick = () => {
+    if (isLongPressRef.current) {
+      isLongPressRef.current = false
+      return
+    }
+    if (isPasta) {
+      setIsOpen(!isOpen)
+    } else {
+      navigateWith(router, `/n/${item.id}`)
+    }
+  }
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsMenuOpen(true)
+  }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || [])
@@ -199,23 +260,21 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
   return (
     <div className="flex flex-col select-none">
       <div
-        className={`group relative flex items-center justify-between py-1 px-2 rounded-md text-sm transition-colors hover:bg-accent/50 ${
-          isActive ? "bg-accent text-accent-foreground font-medium" : "text-foreground/80"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onContextMenu={handleContextMenu}
+        className={`group relative flex items-center justify-between py-1.5 px-2 rounded-lg text-sm transition-all duration-150 ease-out ios-press ${
+          isActive || isMenuOpen ? "bg-accent text-accent-foreground font-medium shadow-xs" : "text-foreground/80 hover:bg-accent/40 active:bg-accent/60"
         }`}
       >
         <div
-          className="flex items-center gap-1.5 flex-1 cursor-pointer overflow-hidden"
-          onClick={() => {
-            if (isPasta) {
-              setIsOpen(!isOpen)
-            } else {
-              navigateWith(router, `/n/${item.id}`)
-            }
-          }}
+          className="flex items-center gap-1.5 flex-1 cursor-pointer overflow-hidden py-0.5"
+          onClick={handleNodeClick}
         >
           {isPasta ? (
             <ChevronRight
-              className={`size-3.5 shrink-0 transition-transform text-muted-foreground ${
+              className={`size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                 isOpen ? "rotate-90" : ""
               }`}
             />
@@ -225,9 +284,9 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
 
           {isPasta ? (
             isOpen ? (
-              <FolderOpen className="size-3.5 shrink-0 text-muted-foreground" />
+              <FolderOpen className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-200" />
             ) : (
-              <Folder className="size-3.5 shrink-0 text-muted-foreground" />
+              <Folder className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-200" />
             )
           ) : (
             <span className="w-3.5 shrink-0" />
@@ -239,12 +298,18 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
         </div>
 
         {/* Actions dropdown */}
-        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <DropdownMenu>
-                <DropdownMenuTrigger className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground cursor-pointer">
-                  <MoreVertical className="size-3.5" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40 font-sans text-xs">
+        <div
+          className={`flex items-center transition-all duration-150 ease-out ${
+            isMenuOpen
+              ? "opacity-100 translate-x-0 pointer-events-auto"
+              : "opacity-0 group-hover:opacity-100 max-sm:opacity-60 translate-x-1 group-hover:translate-x-0 max-sm:translate-x-0"
+          }`}
+        >
+          <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+            <DropdownMenuTrigger className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground cursor-pointer outline-none ios-press">
+              <MoreVertical className="size-3.5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40 font-sans text-xs">
               {isPasta && (
                 <>
                   <DropdownMenuItem onClick={() => handleOpenCreateModal(TipoNo.ARQUIVO)}>
@@ -280,13 +345,38 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
         </div>
       </div>
 
-      {/* Children tree with subtle vertical border line */}
-      {isPasta && isOpen && item.filhos && item.filhos.length > 0 && (
-        <div className="pl-3 ml-2 border-l border-border/40 flex flex-col gap-0.5 mt-0.5">
-          {item.filhos.map((filho) => (
-            <NoTreeNode key={filho.id} item={filho} activeId={activeId} />
-          ))}
-        </div>
+      {/* Children tree with smooth spring height animation */}
+      {isPasta && (
+        <AnimatePresence initial={false}>
+          {isOpen && item.filhos && item.filhos.length > 0 && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{
+                height: "auto",
+                opacity: 1,
+                transition: {
+                  height: { duration: 0.25, ease: [0.32, 0.72, 0, 1] },
+                  opacity: { duration: 0.2, ease: "easeOut" },
+                },
+              }}
+              exit={{
+                height: 0,
+                opacity: 0,
+                transition: {
+                  height: { duration: 0.2, ease: [0.32, 0.72, 0, 1] },
+                  opacity: { duration: 0.15, ease: "easeIn" },
+                },
+              }}
+              className="overflow-hidden"
+            >
+              <div className="pl-3 ml-2 border-l border-border/40 flex flex-col gap-0.5 mt-0.5">
+                {item.filhos.map((filho) => (
+                  <NoTreeNode key={filho.id} item={filho} activeId={activeId} />
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       )}
 
       {/* Action Dialogs */}
@@ -505,7 +595,7 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
             <button
               onClick={() => rootFileInputRef.current?.click()}
               title="Importar .md na Raiz"
-              className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground"
+              className="p-1 hover:bg-accent rounded-md text-muted-foreground hover:text-foreground ios-press transition-colors cursor-pointer"
             >
               <FileUp className="size-3.5" />
             </button>
@@ -523,7 +613,7 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
                 setRootAction("criarArquivo")
               }}
               title="Novo Arquivo na Raiz"
-              className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground"
+              className="p-1 hover:bg-accent rounded-md text-muted-foreground hover:text-foreground ios-press transition-colors cursor-pointer"
             >
               <FilePlus className="size-3.5" />
             </button>
@@ -533,7 +623,7 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
                 setRootAction("criarPasta")
               }}
               title="Nova Pasta na Raiz"
-              className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground"
+              className="p-1 hover:bg-accent rounded-md text-muted-foreground hover:text-foreground ios-press transition-colors cursor-pointer"
             >
               <FolderPlus className="size-3.5" />
             </button>
@@ -547,7 +637,7 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar notas..."
-            className="h-7 pl-7 text-xs bg-background/50 border-border/60"
+            className="h-7 pl-7 text-xs bg-background/50 border-border/60 rounded-md focus-visible:ring-1 focus-visible:ring-primary/40 transition-all"
           />
         </div>
       </SidebarHeader>
@@ -569,7 +659,7 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
           <SettingsDialog />
           <button
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-            className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-accent/50 transition-colors shrink-0"
+            className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-accent/50 transition-colors shrink-0 ios-press cursor-pointer"
           >
             {mounted ? (resolvedTheme === "dark" ? "Claro" : "Escuro") : "Tema"}
           </button>

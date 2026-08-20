@@ -40,14 +40,14 @@ export function Message({ role, avatar, children, className, ...props }: Message
       data-slot="chat-message"
       data-role={role}
       className={cn(
-        "group relative flex gap-3 text-sm",
+        "group relative flex gap-3 text-sm animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
         isUser ? "justify-end" : "justify-start",
         className
       )}
       {...props}
     >
       {!isUser && avatar && (
-        <div className="flex size-7 shrink-0 select-none items-center justify-center rounded-full bg-primary/10 text-primary mt-0.5">
+        <div className="flex size-7 shrink-0 select-none items-center justify-center rounded-full bg-primary/10 text-primary mt-0.5 shadow-xs">
           {avatar}
         </div>
       )}
@@ -55,7 +55,7 @@ export function Message({ role, avatar, children, className, ...props }: Message
         {children}
       </div>
       {isUser && avatar && (
-        <div className="flex size-7 shrink-0 select-none items-center justify-center rounded-full bg-secondary text-secondary-foreground mt-0.5">
+        <div className="flex size-7 shrink-0 select-none items-center justify-center rounded-full bg-secondary text-secondary-foreground mt-0.5 shadow-xs">
           {avatar}
         </div>
       )}

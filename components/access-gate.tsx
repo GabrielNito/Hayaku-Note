@@ -19,10 +19,19 @@ export function AccessGate({ scopes, title = "Este site está protegido", descri
   }
 
   return (
-    <main className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background p-8 text-center">
-      <div className="flex size-11 items-center justify-center rounded-full border border-border bg-muted/40"><LockKeyhole className="size-5 text-muted-foreground" /></div>
-      <div><h1 className="text-base font-medium">Acesso protegido</h1><p className="mt-1 text-xs text-muted-foreground">Nenhum conteúdo foi carregado neste navegador.</p></div>
-      {!open && <Button type="button" size="sm" onClick={() => setOpen(true)}>Inserir PIN</Button>}
+    <main className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-background p-8 text-center animate-in fade-in-0 duration-500">
+      <div className="flex size-12 items-center justify-center rounded-full border border-border/80 bg-muted/40 shadow-xs animate-ios-pulse-soft">
+        <LockKeyhole className="size-5 text-primary" />
+      </div>
+      <div className="space-y-1">
+        <h1 className="text-base font-semibold tracking-tight">Acesso protegido</h1>
+        <p className="text-xs text-muted-foreground max-w-sm">Nenhum conteúdo foi carregado neste navegador.</p>
+      </div>
+      {!open && (
+        <Button type="button" size="sm" onClick={() => setOpen(true)} className="ios-press shadow-sm">
+          Inserir PIN
+        </Button>
+      )}
       <PinDialog open={open} onOpenChange={setOpen} onSuccess={confirmar} title={title} description={`${description} O conteúdo do site permanece oculto até a validação.`} />
     </main>
   )

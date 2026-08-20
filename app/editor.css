@@ -219,6 +219,7 @@
   display: inline-flex;
   align-items: center;
   margin-top: 0.2em;
+  cursor: pointer;
 }
 
 .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] {
