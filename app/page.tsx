@@ -58,7 +58,13 @@ export default async function HomePage() {
                   <div className="text-muted-foreground">Salvar Nota (PIN)</div>
 
                   <div><kbd className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-semibold">Ctrl/Cmd + B</kbd></div>
+                  <div className="text-muted-foreground">Negrito (no editor)</div>
+
+                  <div><kbd className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-semibold">Ctrl/Cmd + ⇧ + B</kbd></div>
                   <div className="text-muted-foreground">Alternar Sidebar</div>
+
+                  <div><kbd className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-semibold">Ctrl/Cmd + /</kbd></div>
+                  <div className="text-muted-foreground">AI Chat</div>
                 </div>
 
                 <div className="border-t border-border/60 pt-2.5 space-y-1 text-[11px] text-muted-foreground">
@@ -66,8 +72,11 @@ export default async function HomePage() {
                   <div>• <code className="text-primary font-semibold">touch path/nota</code> (cria arquivo)</div>
                   <div>• <code className="text-primary font-semibold">mkdir path/pasta</code> (cria pasta)</div>
                   <div>• <code className="text-primary font-semibold">rm path/item</code> (deleta arquivo/pasta)</div>
+                  <div>• <code className="text-primary font-semibold">cp origem destino</code> (copia)</div>
+                  <div>• <code className="text-primary font-semibold">mv origem destino</code> (move/renomeia)</div>
                   <div>• Pressione <kbd className="bg-muted px-1 py-0.5 rounded text-[10px]">Tab</kbd> para autocompletar e ciclar.</div>
                 </div>
+
               </div>
             </div>
           </main>

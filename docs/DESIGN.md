@@ -12,7 +12,7 @@
 - **Light**: fundo quase-branco, texto quase-preto, bordas cinza bem claras.
 - **Dark**: fundo cinza-muito-escuro (não preto puro — cansa menos visualmente), texto cinza-claro, bordas sutis.
 - Um único **accent color** (ex: um azul-acinzentado neutro) reservado exclusivamente para: item selecionado na sidebar, foco de input, cursor/seleção no editor. Nenhum outro elemento usa cor de destaque.
-- Alternância via `next-themes`: respeita `prefers-color-scheme` por padrão, com toggle manual discreto no rodapé da sidebar (texto "Claro/Escuro" ou ícone simples, sua escolha).
+- Alternância via `next-themes`: respeita `prefers-color-scheme` por padrão, com toggle manual discreto no rodapé da sidebar. Atalho `Ctrl/Cmd+D` também alterna o tema.
 
 ## Tipografia
 
@@ -23,32 +23,90 @@
 ## Sidebar (componente `Sidebar` do shadcn)
 
 - `collapsible="offcanvas"` — ao colapsar, some 100%, sem rail de ícones.
-- O `SidebarProvider` já expõe `Ctrl/Cmd+B` nativamente como atalho de toggle — não precisa handler de teclado manual.
-- Árvore de pastas/arquivos puramente tipográfica: pasta em peso médio (ou leve caixa-alta), arquivo em peso normal. Indentação progressiva + uma linha vertical sutil (`border-l`) conectando níveis. Sem ícones de pasta/arquivo — a hierarquia se lê pelo peso e indentação.
+- Toggle via `Ctrl/Cmd+Shift+B` (handler manual no editor) ou clique no `SidebarTrigger`.
+- Árvore de pastas/arquivos tipográfica com ícones discretos do Lucide (`Folder`/`FolderOpen` para pastas, peso diferente para arquivos). Indentação progressiva + linha vertical sutil (`border-l`) conectando níveis.
 - Item selecionado: fundo `--accent` suave, sem borda colorida forte.
-- Rodapé: só o toggle de tema, texto pequeno.
+- Menu de contexto (⋮) por item: criar pasta, criar arquivo, renomear, deletar, importar `.md`.
+- Botão de import no header da sidebar (importa `.md` na raiz).
+- Rodapé: toggle de tema + acesso às Configurações.
+- Animações de abertura/fechamento de pasta via `motion` (AnimatePresence).
 
 ## Área de conteúdo
 
-- Sem navbar tradicional. Barra fina no topo do painel: breadcrumb do caminho (`Pasta / Subpasta / Arquivo`) à esquerda + status de save à direita (`Alterações não salvas` → `Salvo às 14:32`, texto pequeno, fade in/out, sem toast/popup). Sem estado intermediário de "salvando", já que o save é manual e imediato após o PIN.
-- Editor com largura máxima ~720px, centralizado, mesmo em telas largas — otimizado pra leitura, não pra preencher a tela.
+### Header do editor
+Barra fina no topo do painel de conteúdo:
+- **Esquerda:** `SidebarTrigger` + breadcrumb do caminho (`Pasta / Subpasta / Arquivo`).
+- **Direita:** status de save (`Alterações não salvas` → `Salvo às 14:32`, texto pequeno, fade in/out, sem toast/popup) + botões de ação (Salvar, Export `.md`, Document Index, AI Chat).
+
+### Editor
+- Largura máxima ~720px, centralizado, mesmo em telas largas — otimizado pra leitura, não pra preencher a tela.
 - Placeholder do editor vazio: "Comece a escrever...", cinza claro, sem ilustração.
+
+### Layout resizável (desktop)
+- `ResizablePanelGroup` horizontal: painel do editor + painel lateral (Document Index ou AI Chat).
+- O painel lateral pode ser colapsado ou redimensionado com drag.
+
+### Layout mobile
+- Painel lateral (Document Index, AI Chat) exibido em `Sheet` sobreposto ao conteúdo, disparado por botão no header.
+
+## Document Index
+
+Índice automático de seções (H1–H3) do documento aberto.
+- **Desktop:** painel lateral redimensionável, com estados colapsado/expandido.
+- **Mobile:** Sheet.
+- Itens clicáveis com scroll suave para a seção correspondente.
+- Atualiza em tempo real conforme o documento é editado.
+
+## AI Chat (Document Chat)
+
+Chat lateral com o documento aberto.
+- **Desktop:** painel lateral redimensionável, abre com `Ctrl+/` ou botão no header.
+- **Mobile:** Sheet.
+- Provedores: Google Gemini, OpenAI, Anthropic (selecionáveis no header do chat).
+- Conteúdo atual do editor enviado como contexto.
+- **AI Proposal Block:** bloco interativo inserido no editor com proposta de edição e diff linha a linha. O usuário aceita, rejeita ou edita antes de aplicar.
 
 ## Syntax highlighting
 
-- `@tiptap/extension-code-block-lowlight` com `lowlight` (core — não o `highlight.js` inteiro, bundle menor).
-- Registrar só as linguagens usadas nas aulas: `javascript`, `typescript`, `python`, `bash`, `json`, `css`, `html`, `sql` — evita carregar gramática de ~190 linguagens à toa.
-- Tema do highlight: paleta neutra customizada via CSS variables próprias (`--code-keyword`, `--code-string`, `--code-comment`...), reescritas pra bater com as duas paletas (light/dark) do app, em vez de importar um tema pronto de terceiro.
+- `CustomCodeBlock` baseado em `@tiptap/extension-code-block-lowlight` com `lowlight` (core — não o `highlight.js` inteiro, bundle menor).
+- Linguagens registradas: `javascript`, `typescript`, `python`, `bash`, `json`, `css`, `html`, `sql`.
+- Tema do highlight: paleta neutra customizada via CSS variables próprias (`--code-keyword`, `--code-string`, `--code-comment`...), reescritas pra bater com as duas paletas (light/dark) do app.
+- Code block com botão de copiar e seletor de linguagem no canto superior direito.
+
+## Task Lists
+
+- Renderizadas via `TaskList` + `CustomTaskItem` (Tiptap).
+- Checkbox usa o componente `Checkbox` do shadcn, com alinhamento vertical perfeito.
+- Item marcado recebe `line-through` e cor `text-muted-foreground`.
+- Input rule: `- [ ]` + espaço → task list.
+
+## Tabelas
+
+- `CustomTableBlock`: suporte a tabelas GFM com duas abas — Visual (tabela renderizada) e Markdown (raw).
+- Comando `/table` no editor insere uma tabela nova.
+- Tabela visual usa `ScrollArea` para overflow horizontal.
 
 ## Dialog de PIN (ações protegidas)
 
-- Toda ação de mutação (criar pasta/arquivo, salvar, deletar, renomear) passa por verificação de PIN de 6 dígitos **sempre**, sem sessão nem cache — ver seção de auth do `SPEC.md`. Por isso o save do editor é manual (`Ctrl+S`/botão), não automático: pedir PIN a cada 1.5s de digitação inviabilizaria o uso.
+- Toda ação de mutação (criar, salvar, deletar, renomear, import, comandos CLI, upload de imagem) passa por verificação de PIN, conforme as políticas de segurança ativas — ver `SPEC.md` seção 4.
 - Componente: `AlertDialog` do shadcn + `InputOTP` (pacote `input-otp`), 6 slots.
-- **Mascarar os dígitos**: o `input-otp` não tem uma prop nativa tipo `type="password"`, mas dá pra mascarar customizando o `render` de cada slot — em vez de mostrar o caractere digitado (`slot.char`), renderiza um `•` quando o slot está preenchido. É o padrão comum pra PIN inputs com essa lib. Confirme a API exata do slot render na documentação atual do `input-otp` antes de implementar — a lib evolui — mas a abordagem é essa.
+- **Mascarar os dígitos:** cada slot preenchido exibe `•` em vez do caractere digitado.
 - Erro de PIN: shake sutil no dialog + mensagem pequena em vermelho neutro (não saturado).
+- Após validação bem-sucedida, um scope de sessão é concedido via cookie JWT (ex: `["upload"]`, `["search"]`), evitando re-digitação para ações secundárias na mesma sessão.
+
+## Configurações
+
+Dialog acessível pelo rodapé da sidebar, protegido por **Google Authenticator (TOTP)**.
+
+- **Autenticação:** input de 6 dígitos do Authenticator cria uma sessão de Configurações (cookie JWT separado do PIN).
+- **Setup inicial:** exige `SETTINGS_SETUP_KEY`; gera QR Code para cadastrar no Google Authenticator.
+- **Políticas de segurança:** toggles para cada política (`exigirPinEditar`, `exigirPinCriar`, etc.) — ver tabela completa em `SPEC.md` seção 4.2.
+- **API Keys de AI:** campos para Google, OpenAI e Anthropic, criptografadas em banco.
+- **Troca de Authenticator:** fluxo de troca com validação do código atual + cadastro do novo.
 
 ## O que NÃO existe nessa UI
 
 - Sem avatares, badges coloridos, gradientes ou sombras pesadas (máximo `shadow-sm` em dialogs).
 - Sem emojis em nome de pasta/arquivo.
 - Sem onboarding/tour na primeira visita.
+- Sem notificações/toasts para ações de save (o status inline no header substitui).
