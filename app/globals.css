@@ -117,6 +117,150 @@
     --sidebar-ring: oklch(0.556 0 0);
 }
 
+.theme-discord,
+html.theme-discord {
+    --background: #f2f3f5;
+    --foreground: #2e3338;
+    --card: #ffffff;
+    --card-foreground: #2e3338;
+    --popover: #ffffff;
+    --popover-foreground: #2e3338;
+    --primary: #5865f2;
+    --primary-foreground: #ffffff;
+    --secondary: #e3e5e8;
+    --secondary-foreground: #2e3338;
+    --muted: #e3e5e8;
+    --muted-foreground: #5c5e66;
+    --accent: #e3e5e8;
+    --accent-foreground: #2e3338;
+    --destructive: #da373c;
+    --border: rgba(0, 0, 0, 0.08);
+    --input: rgba(0, 0, 0, 0.08);
+    --ring: #5865f2;
+    --chart-1: #5865f2;
+    --chart-2: #57f287;
+    --chart-3: #fee75c;
+    --chart-4: #eb459e;
+    --chart-5: #ed4245;
+    --sidebar: #e3e5e8;
+    --sidebar-foreground: #2e3338;
+    --sidebar-primary: #5865f2;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #d7d9dc;
+    --sidebar-accent-foreground: #2e3338;
+    --sidebar-border: rgba(0, 0, 0, 0.08);
+    --sidebar-ring: #5865f2;
+}
+
+.theme-discord.dark,
+html.theme-discord.dark,
+html.dark.theme-discord {
+    --background: #313338;
+    --foreground: #dbdee1;
+    --card: #2b2d31;
+    --card-foreground: #dbdee1;
+    --popover: #2b2d31;
+    --popover-foreground: #dbdee1;
+    --primary: #5865f2;
+    --primary-foreground: #ffffff;
+    --secondary: #35373c;
+    --secondary-foreground: #f2f3f5;
+    --muted: #2b2d31;
+    --muted-foreground: #949ba4;
+    --accent: #35373c;
+    --accent-foreground: #f2f3f5;
+    --destructive: #da373c;
+    --border: rgba(255, 255, 255, 0.08);
+    --input: rgba(255, 255, 255, 0.12);
+    --ring: #5865f2;
+    --chart-1: #5865f2;
+    --chart-2: #57f287;
+    --chart-3: #fee75c;
+    --chart-4: #eb459e;
+    --chart-5: #ed4245;
+    --sidebar: #2b2d31;
+    --sidebar-foreground: #dbdee1;
+    --sidebar-primary: #5865f2;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #35373c;
+    --sidebar-accent-foreground: #f2f3f5;
+    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --sidebar-ring: #5865f2;
+}
+
+/* Catppuccin Latte (Light) */
+.theme-catppuccin,
+html.theme-catppuccin {
+    --background: #eff1f5;
+    --foreground: #4c4f69;
+    --card: #ffffff;
+    --card-foreground: #4c4f69;
+    --popover: #ffffff;
+    --popover-foreground: #4c4f69;
+    --primary: #7287fd;
+    --primary-foreground: #ffffff;
+    --secondary: #e6e9ef;
+    --secondary-foreground: #4c4f69;
+    --muted: #e6e9ef;
+    --muted-foreground: #6c6f85;
+    --accent: #dce0e8;
+    --accent-foreground: #4c4f69;
+    --destructive: #d20f39;
+    --border: rgba(0, 0, 0, 0.08);
+    --input: rgba(0, 0, 0, 0.08);
+    --ring: #7287fd;
+    --chart-1: #7287fd;
+    --chart-2: #40a02b;
+    --chart-3: #df8e1d;
+    --chart-4: #ea76cb;
+    --chart-5: #d20f39;
+    --sidebar: #e6e9ef;
+    --sidebar-foreground: #4c4f69;
+    --sidebar-primary: #7287fd;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #dce0e8;
+    --sidebar-accent-foreground: #4c4f69;
+    --sidebar-border: rgba(0, 0, 0, 0.08);
+    --sidebar-ring: #7287fd;
+}
+
+/* Catppuccin Frappé (Dark) */
+.theme-catppuccin.dark,
+html.theme-catppuccin.dark,
+html.dark.theme-catppuccin {
+    --background: #303446;
+    --foreground: #c6d0f5;
+    --card: #292c3c;
+    --card-foreground: #c6d0f5;
+    --popover: #292c3c;
+    --popover-foreground: #c6d0f5;
+    --primary: #babbf1;
+    --primary-foreground: #232634;
+    --secondary: #414559;
+    --secondary-foreground: #c6d0f5;
+    --muted: #292c3c;
+    --muted-foreground: #a5adce;
+    --accent: #414559;
+    --accent-foreground: #c6d0f5;
+    --destructive: #e78284;
+    --border: rgba(255, 255, 255, 0.08);
+    --input: rgba(255, 255, 255, 0.12);
+    --ring: #babbf1;
+    --chart-1: #babbf1;
+    --chart-2: #a6d189;
+    --chart-3: #e5c890;
+    --chart-4: #f4b8e4;
+    --chart-5: #e78284;
+    --sidebar: #292c3c;
+    --sidebar-foreground: #c6d0f5;
+    --sidebar-primary: #babbf1;
+    --sidebar-primary-foreground: #232634;
+    --sidebar-accent: #414559;
+    --sidebar-accent-foreground: #c6d0f5;
+    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --sidebar-ring: #babbf1;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -249,6 +393,42 @@
 
 .dark ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.38);
+}
+
+.theme-discord * {
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
+.theme-discord ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.theme-discord ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.theme-catppuccin * {
+  scrollbar-color: rgba(120, 120, 120, 0.22) transparent;
+}
+
+.theme-catppuccin ::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 120, 0.22);
+}
+
+.theme-catppuccin ::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 120, 120, 0.35);
+}
+
+.theme-catppuccin.dark * {
+  scrollbar-color: rgba(198, 208, 245, 0.18) transparent;
+}
+
+.theme-catppuccin.dark ::-webkit-scrollbar-thumb {
+  background: rgba(198, 208, 245, 0.18);
+}
+
+.theme-catppuccin.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(198, 208, 245, 0.3);
 }
 
 /* Utility to completely hide scrollbars when desired */

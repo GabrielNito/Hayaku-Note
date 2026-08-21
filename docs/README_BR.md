@@ -26,13 +26,14 @@ O **Hayaku Note** foi criado para eliminar o atrito de tomar notas e organizar c
 
 ## Funcionalidades
 
-- 📝 **Editor Tiptap Markdown**: Regras de autoformatação instantânea (`#`, `-`, `>`), listas de tarefas (`- [ ]`), tabelas GFM com abas visual e markdown bruto, código inline e blocos de código com destaque de sintaxe (JS, TS, Python, Bash, SQL, JSON, HTML, CSS), botão de cópia e seleção de linguagem.
+- 📝 **Editor Tiptap Markdown**: Regras de autoformatação instantânea (`#`, `-`, `>`), listas de tarefas (`- [ ]`), tabelas GFM com abas visual e markdown bruto, código inline e blocos de código com destaque de sintaxe rico e adaptativo (JS, TSX, Python, Bash, SQL, JSON, HTML, CSS), botão de cópia e seleção de linguagem.
+- 🎨 **Paletas de Temas Sincronizadas & Menos Contraste**: Desenhadas para descanso visual e sincronizadas no banco de dados entre todos os seus dispositivos. Escolha entre **Catppuccin** (Frappé & Latte), **Discord** (Dark suave & Light suave) ou **Clássico** (Dark OLED & Light puro).
 - 🖼️ **Colagem e Arrastar Imagens**: Cole capturas de tela ou arraste imagens direto no editor com upload para o Uploadthing e alças de redimensionamento.
 - 🤖 **Chat com IA no Documento**: Interaja com suas notas usando Gemini, OpenAI ou Anthropic. Receba blocos de proposta com diffs linha a linha para aplicar direto no texto.
 - ⚡ **Command Bar CLI e Quick Open**: Busca difusa rápida (`Ctrl+P`) e modal CLI (`Ctrl+Shift+P`) para criar, mover, copiar e excluir notas e pastas sem tocar no mouse.
 - 📑 **Índice Dinâmico do Documento (TOC)**: Navegação automática por cabeçalhos (H1–H3) com rolagem suave e suporte responsivo a Sheet no mobile.
 - 🔒 **Segurança Granular & Google Authenticator (TOTP)**: Painel de configurações protegido por 2FA (TOTP) para alternar exigência de PIN em visualização da árvore, leitura de arquivos, edição, exclusão, movimentação/cópia, exportação, busca e IA.
-- 🌓 **Alternância de Tema Instantânea**: Temas claro e escuro com suporte a detecção do sistema (`Ctrl+D`).
+- 🌓 **Alternância de Modo Instantânea**: Alternância fluida entre modo claro e escuro (<kbd>Ctrl+D</kbd> ou tecla <kbd>D</kbd>) com detecção de preferência do sistema.
 - 📱 **100% Responsivo**: Painéis redimensionáveis no desktop e gavetas (sheets) otimizadas para mobile.
 
 ---
@@ -174,7 +175,7 @@ Acesse [http://localhost:3000](http://localhost:3000) no navegador.
 | <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>B</kbd> | Negrito na seleção (dentro do editor) |
 | <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd> | Alternar visibilidade da barra lateral |
 | <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>/</kbd> | Abrir/fechar Chat com IA |
-| <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>D</kbd> | Alternar tema claro / escuro |
+| <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>D</kbd> ou <kbd>D</kbd> | Alternar modo claro / escuro |
 | <kbd>Esc</kbd> | Fechar modais, command bar ou quick open |
 
 **Comandos da Command Bar CLI (`Ctrl+Shift+P`):**

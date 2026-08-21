@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button"
 
 const LANGUAGES = [
   { label: "Plaintext", value: "" },
-  { label: "JavaScript", value: "javascript" },
-  { label: "TypeScript", value: "typescript" },
+  { label: "TypeScript (TSX)", value: "typescript" },
+  { label: "JavaScript (JSX)", value: "javascript" },
   { label: "Python", value: "python" },
-  { label: "Bash", value: "bash" },
+  { label: "Bash / Shell", value: "bash" },
   { label: "JSON", value: "json" },
-  { label: "CSS", value: "css" },
-  { label: "HTML", value: "html" },
+  { label: "CSS / SCSS", value: "css" },
+  { label: "HTML / XML", value: "html" },
   { label: "SQL", value: "sql" },
 ]
 

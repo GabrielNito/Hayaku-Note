@@ -25,7 +25,7 @@ interface GlobalShortcutsProps {
 }
 
 export function GlobalShortcuts({ arvore, exigirPinBusca = false, children }: GlobalShortcutsProps) {
-  const { resolvedTheme, setTheme } = useTheme()
+  const { toggleMode } = useTheme()
   const [quickOpenOpen, setQuickOpenOpen] = React.useState(false)
   const [commandBarOpen, setCommandBarOpen] = React.useState(false)
   const [searchPinOpen, setSearchPinOpen] = React.useState(false)
@@ -76,7 +76,7 @@ export function GlobalShortcuts({ arvore, exigirPinBusca = false, children }: Gl
       if (isMod && !e.shiftKey && key === "d") {
         e.preventDefault()
         e.stopPropagation()
-        setTheme(resolvedTheme === "dark" ? "light" : "dark")
+        toggleMode()
         return
       }
     }
@@ -93,7 +93,7 @@ export function GlobalShortcuts({ arvore, exigirPinBusca = false, children }: Gl
       window.removeEventListener("open-quick-open", handleCustomQuickOpen)
       window.removeEventListener("open-command-bar", handleCustomCommandBar)
     }
-  }, [resolvedTheme, setTheme, quickOpenOpen, commandBarOpen, handleOpenSearch, handleOpenCommandBar])
+  }, [toggleMode, quickOpenOpen, commandBarOpen, handleOpenSearch, handleOpenCommandBar])
 
   async function confirmarBusca(pin: string) {
     const result = await liberarAcesso(pin, ["search"])

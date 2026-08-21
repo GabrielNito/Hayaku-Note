@@ -26,13 +26,14 @@ A minimal, personal, zero-friction markdown notebook with instant keyboard navig
 
 ## Features
 
-- 📝 **Modern Tiptap Markdown Editor**: Auto-formatting shortcuts (`#`, `-`, `>`), task lists (`- [ ]`), GFM tables with dual visual/markdown editing modes, inline code, and syntax-highlighted code blocks (JS, TS, Python, Bash, SQL, JSON, HTML, CSS) with copy and language selection.
+- 📝 **Modern Tiptap Markdown Editor**: Auto-formatting shortcuts (`#`, `-`, `>`), task lists (`- [ ]`), GFM tables with dual visual/markdown editing modes, inline code, and vibrant, theme-adaptive syntax-highlighted code blocks (JS, TSX, Python, Bash, SQL, JSON, HTML, CSS) with instant copy and language selector.
+- 🎨 **Multi-Device Theme Palettes & Less Contrast**: Designed for eye comfort with synchronized database storage across all devices. Choose between **Catppuccin** (Frappé & Latte), **Discord** (Soft Dark & Light), or **Classic** (OLED Dark & Pure Light).
 - 🖼️ **Image Drag & Drop / Paste**: Paste prints or drop images directly into notes with automatic cloud upload via Uploadthing and client-side resizable handles.
 - 🤖 **Integrated AI Document Assistant**: Chat with your documents using Google Gemini, OpenAI, or Anthropic. Get line-by-line AI proposal diffs directly in your editor.
 - ⚡ **CLI Command Bar & Quick Open**: Fast fuzzy file finder (`Ctrl+P`) and modal CLI (`Ctrl+Shift+P`) to quickly create, move, copy, and delete files and nested folders without touching the mouse.
 - 📑 **Dynamic Document Index (Table of Contents)**: Auto-generated heading navigation (H1–H3) with smooth scrolling and responsive mobile sheet support.
 - 🔒 **Granular Security & Google Authenticator (TOTP)**: Admin dashboard protected by 2FA (TOTP) to toggle PIN requirements for tree access, note reading, editing, deleting, moving/copying, exporting, searching, and AI chat.
-- 🌓 **Instant Theme Toggle**: Seamless light and dark mode with system preference auto-detection (`Ctrl+D`).
+- 🌓 **Instant Theme Mode Toggle**: Seamless light and dark mode switching with system preference auto-detection (<kbd>Ctrl+D</kbd> or <kbd>D</kbd>).
 - 📱 **Fully Responsive**: Optimized desktop resizable panels and mobile sheet navigation.
 
 ---
@@ -174,7 +175,7 @@ Open [http://localhost:3000](http://localhost:3000) to view your notebook.
 | <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>B</kbd> | Bold selection (inside editor) |
 | <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd> | Toggle sidebar |
 | <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>/</kbd> | Toggle AI Chat |
-| <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>D</kbd> | Toggle light / dark theme |
+| <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>D</kbd> ou <kbd>D</kbd> | Toggle light / dark theme mode |
 | <kbd>Esc</kbd> | Close dialogs, command bar, or quick open |
 
 **Command Bar CLI commands (`Ctrl+Shift+P`):**

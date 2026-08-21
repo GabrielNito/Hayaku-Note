@@ -8,6 +8,30 @@
     --code-bg: #09090b;
     --code-fg: #ffffff;
   }
+
+  .theme-discord {
+    --code-bg: #e3e5e8;
+    --code-fg: #2e3338;
+  }
+
+  .theme-discord.dark,
+  .dark .theme-discord,
+  .theme-discord .dark {
+    --code-bg: #232428;
+    --code-fg: #dbdee1;
+  }
+
+  .theme-catppuccin {
+    --code-bg: #e6e9ef;
+    --code-fg: #4c4f69;
+  }
+
+  .theme-catppuccin.dark,
+  .dark .theme-catppuccin,
+  .theme-catppuccin .dark {
+    --code-bg: #232634;
+    --code-fg: #c6d0f5;
+  }
 }
 
 .ProseMirror {
@@ -163,35 +187,418 @@
   color: var(--code-fg);
 }
 
-/* Palavras-chave (import, from) e delimitadores */
-.hljs-keyword,
-.hljs-punctuation,
-.hljs-tag .hljs-punctuation {
-  color: #71717a;
-}
-
-/* Nomes de Tags / Componentes JSX (<Message>, <Avatar>, etc.) */
-.hljs-tag,
-.hljs-tag .hljs-name,
-.hljs-title.class_ {
-  color: #e5884f;
-}
-
-/* Atributos HTML/JSX (src, alt, etc.) */
-.hljs-attr {
-  color: #a1a1aa;
-}
-
-/* Strings ("https://...", "@/components/...") */
-.hljs-string {
-  color: #3bbfa0;
-}
-
-/* Comentários */
 .hljs-comment,
 .hljs-quote {
-  color: #71717a;
   font-style: italic;
+  opacity: 0.85;
+}
+
+/* --------------------------------------------------------------------------
+   1. Catppuccin Theme (Frappé Dark & Latte Light)
+   -------------------------------------------------------------------------- */
+.theme-catppuccin.dark .hljs,
+.dark .theme-catppuccin .hljs,
+.theme-catppuccin.dark .ProseMirror pre code,
+.theme-catppuccin.dark .ProseMirror pre {
+  color: #c6d0f5;
+}
+
+.theme-catppuccin.dark .hljs-keyword,
+.theme-catppuccin.dark .hljs-selector-tag {
+  color: #ca9ee6; /* Mauve */
+  font-weight: 500;
+}
+
+.theme-catppuccin.dark .hljs-function,
+.theme-catppuccin.dark .hljs-title.function_,
+.theme-catppuccin.dark .hljs-title {
+  color: #8caaee; /* Blue */
+}
+
+.theme-catppuccin.dark .hljs-string,
+.theme-catppuccin.dark .hljs-template-variable,
+.theme-catppuccin.dark .hljs-addition {
+  color: #a6d189; /* Green */
+}
+
+.theme-catppuccin.dark .hljs-type,
+.theme-catppuccin.dark .hljs-title.class_,
+.theme-catppuccin.dark .hljs-class {
+  color: #e5c890; /* Yellow */
+}
+
+.theme-catppuccin.dark .hljs-number,
+.theme-catppuccin.dark .hljs-literal,
+.theme-catppuccin.dark .hljs-boolean {
+  color: #ef9f76; /* Peach */
+}
+
+.theme-catppuccin.dark .hljs-built_in,
+.theme-catppuccin.dark .hljs-symbol {
+  color: #ea999c; /* Maroon */
+}
+
+.theme-catppuccin.dark .hljs-tag,
+.theme-catppuccin.dark .hljs-tag .hljs-name {
+  color: #e78284; /* Red */
+}
+
+.theme-catppuccin.dark .hljs-attr,
+.theme-catppuccin.dark .hljs-attribute {
+  color: #81c8be; /* Teal */
+}
+
+.theme-catppuccin.dark .hljs-variable,
+.theme-catppuccin.dark .hljs-params,
+.theme-catppuccin.dark .hljs-property {
+  color: #eebebe; /* Flamingo */
+}
+
+.theme-catppuccin.dark .hljs-operator,
+.theme-catppuccin.dark .hljs-punctuation,
+.theme-catppuccin.dark .hljs-tag .hljs-punctuation {
+  color: #99d1db; /* Sky */
+}
+
+.theme-catppuccin.dark .hljs-comment,
+.theme-catppuccin.dark .hljs-quote {
+  color: #737994; /* Overlay0 */
+}
+
+/* Catppuccin Latte (Light) */
+.theme-catppuccin:not(.dark) .hljs,
+.theme-catppuccin:not(.dark) .ProseMirror pre code,
+.theme-catppuccin:not(.dark) .ProseMirror pre {
+  color: #4c4f69;
+}
+
+.theme-catppuccin:not(.dark) .hljs-keyword,
+.theme-catppuccin:not(.dark) .hljs-selector-tag {
+  color: #8839ef; /* Mauve */
+  font-weight: 500;
+}
+
+.theme-catppuccin:not(.dark) .hljs-function,
+.theme-catppuccin:not(.dark) .hljs-title.function_,
+.theme-catppuccin:not(.dark) .hljs-title {
+  color: #1e66f5; /* Blue */
+}
+
+.theme-catppuccin:not(.dark) .hljs-string,
+.theme-catppuccin:not(.dark) .hljs-template-variable,
+.theme-catppuccin:not(.dark) .hljs-addition {
+  color: #40a02b; /* Green */
+}
+
+.theme-catppuccin:not(.dark) .hljs-type,
+.theme-catppuccin:not(.dark) .hljs-title.class_,
+.theme-catppuccin:not(.dark) .hljs-class {
+  color: #df8e1d; /* Yellow */
+}
+
+.theme-catppuccin:not(.dark) .hljs-number,
+.theme-catppuccin:not(.dark) .hljs-literal,
+.theme-catppuccin:not(.dark) .hljs-boolean {
+  color: #fe640b; /* Peach */
+}
+
+.theme-catppuccin:not(.dark) .hljs-built_in,
+.theme-catppuccin:not(.dark) .hljs-symbol {
+  color: #e64553; /* Maroon */
+}
+
+.theme-catppuccin:not(.dark) .hljs-tag,
+.theme-catppuccin:not(.dark) .hljs-tag .hljs-name {
+  color: #d20f39; /* Red */
+}
+
+.theme-catppuccin:not(.dark) .hljs-attr,
+.theme-catppuccin:not(.dark) .hljs-attribute {
+  color: #179299; /* Teal */
+}
+
+.theme-catppuccin:not(.dark) .hljs-variable,
+.theme-catppuccin:not(.dark) .hljs-params,
+.theme-catppuccin:not(.dark) .hljs-property {
+  color: #dd7878; /* Flamingo */
+}
+
+.theme-catppuccin:not(.dark) .hljs-operator,
+.theme-catppuccin:not(.dark) .hljs-punctuation,
+.theme-catppuccin:not(.dark) .hljs-tag .hljs-punctuation {
+  color: #04a5e5; /* Sky */
+}
+
+.theme-catppuccin:not(.dark) .hljs-comment,
+.theme-catppuccin:not(.dark) .hljs-quote {
+  color: #8c8fa1; /* Overlay0 */
+}
+
+/* --------------------------------------------------------------------------
+   2. Discord Theme (Dark & Light)
+   -------------------------------------------------------------------------- */
+.theme-discord.dark .hljs,
+.dark .theme-discord .hljs,
+.theme-discord.dark .ProseMirror pre code,
+.theme-discord.dark .ProseMirror pre {
+  color: #dbdee1;
+}
+
+.theme-discord.dark .hljs-keyword,
+.theme-discord.dark .hljs-selector-tag {
+  color: #ff7b72;
+  font-weight: 500;
+}
+
+.theme-discord.dark .hljs-function,
+.theme-discord.dark .hljs-title.function_,
+.theme-discord.dark .hljs-title {
+  color: #79c0ff;
+}
+
+.theme-discord.dark .hljs-string,
+.theme-discord.dark .hljs-template-variable,
+.theme-discord.dark .hljs-addition {
+  color: #7ee787;
+}
+
+.theme-discord.dark .hljs-type,
+.theme-discord.dark .hljs-title.class_,
+.theme-discord.dark .hljs-class {
+  color: #ffa657;
+}
+
+.theme-discord.dark .hljs-number,
+.theme-discord.dark .hljs-literal,
+.theme-discord.dark .hljs-boolean {
+  color: #f0883e;
+}
+
+.theme-discord.dark .hljs-built_in,
+.theme-discord.dark .hljs-symbol {
+  color: #d2a8ff;
+}
+
+.theme-discord.dark .hljs-tag,
+.theme-discord.dark .hljs-tag .hljs-name {
+  color: #ff7b72;
+}
+
+.theme-discord.dark .hljs-attr,
+.theme-discord.dark .hljs-attribute {
+  color: #79c0ff;
+}
+
+.theme-discord.dark .hljs-variable,
+.theme-discord.dark .hljs-params,
+.theme-discord.dark .hljs-property {
+  color: #e6edf3;
+}
+
+.theme-discord.dark .hljs-operator,
+.theme-discord.dark .hljs-punctuation,
+.theme-discord.dark .hljs-tag .hljs-punctuation {
+  color: #a5d6ff;
+}
+
+.theme-discord.dark .hljs-comment,
+.theme-discord.dark .hljs-quote {
+  color: #8b949e;
+}
+
+/* Discord Light */
+.theme-discord:not(.dark) .hljs,
+.theme-discord:not(.dark) .ProseMirror pre code,
+.theme-discord:not(.dark) .ProseMirror pre {
+  color: #2e3338;
+}
+
+.theme-discord:not(.dark) .hljs-keyword,
+.theme-discord:not(.dark) .hljs-selector-tag {
+  color: #cf222e;
+  font-weight: 500;
+}
+
+.theme-discord:not(.dark) .hljs-function,
+.theme-discord:not(.dark) .hljs-title.function_,
+.theme-discord:not(.dark) .hljs-title {
+  color: #0969da;
+}
+
+.theme-discord:not(.dark) .hljs-string,
+.theme-discord:not(.dark) .hljs-template-variable,
+.theme-discord:not(.dark) .hljs-addition {
+  color: #1a7f37;
+}
+
+.theme-discord:not(.dark) .hljs-type,
+.theme-discord:not(.dark) .hljs-title.class_,
+.theme-discord:not(.dark) .hljs-class {
+  color: #953800;
+}
+
+.theme-discord:not(.dark) .hljs-number,
+.theme-discord:not(.dark) .hljs-literal,
+.theme-discord:not(.dark) .hljs-boolean {
+  color: #b05a00;
+}
+
+.theme-discord:not(.dark) .hljs-built_in,
+.theme-discord:not(.dark) .hljs-symbol {
+  color: #8250df;
+}
+
+.theme-discord:not(.dark) .hljs-tag,
+.theme-discord:not(.dark) .hljs-tag .hljs-name {
+  color: #cf222e;
+}
+
+.theme-discord:not(.dark) .hljs-attr,
+.theme-discord:not(.dark) .hljs-attribute {
+  color: #0969da;
+}
+
+.theme-discord:not(.dark) .hljs-variable,
+.theme-discord:not(.dark) .hljs-params,
+.theme-discord:not(.dark) .hljs-property {
+  color: #24292f;
+}
+
+.theme-discord:not(.dark) .hljs-operator,
+.theme-discord:not(.dark) .hljs-punctuation,
+.theme-discord:not(.dark) .hljs-tag .hljs-punctuation {
+  color: #57606a;
+}
+
+.theme-discord:not(.dark) .hljs-comment,
+.theme-discord:not(.dark) .hljs-quote {
+  color: #6e7781;
+}
+
+/* --------------------------------------------------------------------------
+   3. Clássico / Default Theme (Dark & Light)
+   -------------------------------------------------------------------------- */
+.theme-normal.dark .hljs,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs,
+.dark:not(.theme-discord):not(.theme-catppuccin) .ProseMirror pre code,
+.dark:not(.theme-discord):not(.theme-catppuccin) .ProseMirror pre {
+  color: #e6edf3;
+}
+
+.theme-normal.dark .hljs-keyword,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-keyword,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-selector-tag {
+  color: #c678dd;
+  font-weight: 500;
+}
+
+.theme-normal.dark .hljs-function,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-function,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-title.function_,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-title {
+  color: #61afef;
+}
+
+.theme-normal.dark .hljs-string,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-string,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-template-variable,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-addition {
+  color: #98c379;
+}
+
+.theme-normal.dark .hljs-type,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-type,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-title.class_,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-class {
+  color: #e5c07b;
+}
+
+.theme-normal.dark .hljs-number,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-number,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-literal,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-boolean {
+  color: #d19a66;
+}
+
+.theme-normal.dark .hljs-built_in,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-built_in,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-symbol {
+  color: #e06c75;
+}
+
+.theme-normal.dark .hljs-tag,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-tag,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-tag .hljs-name {
+  color: #e06c75;
+}
+
+.theme-normal.dark .hljs-attr,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-attr,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-attribute {
+  color: #d19a66;
+}
+
+.theme-normal.dark .hljs-comment,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-comment,
+.dark:not(.theme-discord):not(.theme-catppuccin) .hljs-quote {
+  color: #7f848e;
+}
+
+/* Default / Classic Light */
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .ProseMirror pre code,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .ProseMirror pre {
+  color: #24292e;
+}
+
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-keyword,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-selector-tag {
+  color: #d73a49;
+  font-weight: 500;
+}
+
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-function,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-title.function_,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-title {
+  color: #6f42c1;
+}
+
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-string,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-template-variable,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-addition {
+  color: #22863a;
+}
+
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-type,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-title.class_,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-class {
+  color: #005cc5;
+}
+
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-number,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-literal,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-boolean {
+  color: #005cc5;
+}
+
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-built_in,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-symbol {
+  color: #e36209;
+}
+
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-tag,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-tag .hljs-name {
+  color: #22863a;
+}
+
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-attr,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-attribute {
+  color: #6f42c1;
+}
+
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-comment,
+:root:not(.dark):not(.theme-discord):not(.theme-catppuccin) .hljs-quote {
+  color: #6a737d;
 }
 
 /* Task List / Checkbox styling */

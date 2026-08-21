@@ -2,25 +2,44 @@
 
 import * as React from "react"
 
-type Theme = "dark" | "light" | "system"
+export type ThemePalette = "catppuccin" | "discord" | "normal"
+export type ThemeMode = "dark" | "light" | "system"
+export type ResolvedMode = "dark" | "light"
 
 interface ThemeContextType {
-  theme: Theme
-  setTheme: (theme: Theme) => void
+  palette: ThemePalette
+  setPalette: (palette: ThemePalette) => void
+  mode: ThemeMode
+  setMode: (mode: ThemeMode) => void
+  resolvedMode: ResolvedMode
+  toggleMode: () => void
+  isDark: boolean
+  // Compatibilidade
+  theme: string
+  setTheme: (val: string) => void
   resolvedTheme: "dark" | "light"
 }
 
 const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined)
 
-function getStoredTheme(): Theme {
+function getStoredPalette(defaultPalette: ThemePalette): ThemePalette {
+  if (typeof window === "undefined") return defaultPalette
+  const val = localStorage.getItem("theme_palette") || localStorage.getItem("theme")
+  if (val === "catppuccin" || val === "discord" || val === "normal") return val
+  return defaultPalette
+}
+
+function getStoredMode(): ThemeMode {
   if (typeof window === "undefined") return "system"
-  const val = localStorage.getItem("theme")
+  const val = localStorage.getItem("theme_mode")
   if (val === "dark" || val === "light" || val === "system") return val
+  const legacyVal = localStorage.getItem("theme")
+  if (legacyVal === "dark" || legacyVal === "light" || legacyVal === "system") return legacyVal
   return "system"
 }
 
-function getSystemTheme(): "dark" | "light" {
-  if (typeof window === "undefined") return "light"
+function getSystemMode(): ResolvedMode {
+  if (typeof window === "undefined") return "dark"
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 }
 
@@ -37,7 +56,7 @@ function subscribeToTheme(callback: () => void) {
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
   const handleMedia = () => callback()
   const handleStorage = (e: StorageEvent) => {
-    if (e.key === "theme") callback()
+    if (e.key === "theme_palette" || e.key === "theme_mode" || e.key === "theme") callback()
   }
   mediaQuery.addEventListener("change", handleMedia)
   window.addEventListener("storage", handleStorage)
@@ -51,37 +70,101 @@ function subscribeToTheme(callback: () => void) {
 
 export function ThemeProvider({
   children,
+  initialTheme = "discord",
 }: {
   children: React.ReactNode
+  initialTheme?: string
 }) {
-  const theme = React.useSyncExternalStore(
+  const defaultPalette: ThemePalette =
+    initialTheme === "catppuccin"
+      ? "catppuccin"
+      : initialTheme === "normal" || initialTheme === "classico"
+      ? "normal"
+      : "discord"
+
+  const getPaletteSnapshot = React.useCallback(() => getStoredPalette(defaultPalette), [defaultPalette])
+  const getPaletteServerSnapshot = React.useCallback(() => defaultPalette, [defaultPalette])
+
+  const palette = React.useSyncExternalStore(
     subscribeToTheme,
-    getStoredTheme,
-    () => "system" as Theme
+    getPaletteSnapshot,
+    getPaletteServerSnapshot
   )
 
-  const systemTheme = React.useSyncExternalStore(
+  const mode = React.useSyncExternalStore(
     subscribeToTheme,
-    getSystemTheme,
-    () => "light" as "dark" | "light"
+    getStoredMode,
+    () => "system" as ThemeMode
   )
 
-  const resolvedTheme: "dark" | "light" = theme === "system" ? systemTheme : theme
+  const systemMode = React.useSyncExternalStore(
+    subscribeToTheme,
+    getSystemMode,
+    () => "dark" as ResolvedMode
+  )
+
+  const resolvedMode: ResolvedMode = mode === "system" ? systemMode : mode
+  const isDark = resolvedMode === "dark"
 
   React.useEffect(() => {
     const root = document.documentElement
-    root.classList.remove("light", "dark")
-    root.classList.add(resolvedTheme)
-  }, [resolvedTheme])
+    root.classList.remove("light", "dark", "theme-discord", "theme-catppuccin", "theme-normal")
 
-  const setTheme = React.useCallback((newTheme: Theme) => {
-    localStorage.setItem("theme", newTheme)
+    root.classList.add(resolvedMode)
+    if (palette === "catppuccin") {
+      root.classList.add("theme-catppuccin")
+      root.dataset.palette = "catppuccin"
+    } else if (palette === "discord") {
+      root.classList.add("theme-discord")
+      root.dataset.palette = "discord"
+    } else {
+      root.classList.add("theme-normal")
+      root.dataset.palette = "normal"
+    }
+  }, [resolvedMode, palette])
+
+  const setPalette = React.useCallback((newPalette: ThemePalette) => {
+    localStorage.setItem("theme_palette", newPalette)
     notifyThemeChange()
   }, [])
 
+  const setMode = React.useCallback((newMode: ThemeMode) => {
+    localStorage.setItem("theme_mode", newMode)
+    notifyThemeChange()
+  }, [])
+
+  const toggleMode = React.useCallback(() => {
+    const nextMode = resolvedMode === "dark" ? "light" : "dark"
+    setMode(nextMode)
+  }, [resolvedMode, setMode])
+
+  const setTheme = React.useCallback(
+    (val: string) => {
+      if (val === "catppuccin" || val === "discord" || val === "normal") {
+        setPalette(val)
+      } else if (val === "dark" || val === "light" || val === "system") {
+        setMode(val as ThemeMode)
+      } else if (val === "toggle") {
+        toggleMode()
+      }
+    },
+    [setPalette, setMode, toggleMode]
+  )
+
   const contextValue = React.useMemo(
-    () => ({ theme, setTheme, resolvedTheme }),
-    [theme, setTheme, resolvedTheme]
+    () => ({
+      palette,
+      setPalette,
+      mode,
+      setMode,
+      resolvedMode,
+      toggleMode,
+      isDark,
+      theme: palette,
+      setTheme,
+      resolvedTheme: resolvedMode,
+    }),
+    [palette, setPalette, mode, setMode, resolvedMode, toggleMode, isDark, setTheme]
   )
 
   return (
@@ -114,7 +197,7 @@ function isTypingTarget(target: EventTarget | null) {
 }
 
 function ThemeHotkey() {
-  const { resolvedTheme, setTheme } = useTheme()
+  const { toggleMode } = useTheme()
 
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -134,7 +217,7 @@ function ThemeHotkey() {
         return
       }
 
-      setTheme(resolvedTheme === "dark" ? "light" : "dark")
+      toggleMode()
     }
 
     window.addEventListener("keydown", onKeyDown)
@@ -142,7 +225,7 @@ function ThemeHotkey() {
     return () => {
       window.removeEventListener("keydown", onKeyDown)
     }
-  }, [resolvedTheme, setTheme])
+  }, [toggleMode])
 
   return null
 }
