@@ -445,7 +445,7 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
   const router = useRouter()
   const pathname = usePathname()
   const currentActiveId = activeId || pathname?.split("/").pop()
-  const { resolvedTheme, setTheme } = useTheme()
+  const { resolvedMode, toggleMode } = useTheme()
   const mounted = React.useSyncExternalStore(
     () => () => {},
     () => true,
@@ -646,10 +646,11 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
         <div className="flex items-center justify-between gap-1">
           <SettingsDialog />
           <button
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            onClick={() => toggleMode()}
             className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-accent/50 transition-colors shrink-0 ios-press cursor-pointer"
+            title="Alternar tema claro/escuro (Atalho: D ou Ctrl+D)"
           >
-            {mounted ? (resolvedTheme === "dark" ? "Claro" : "Escuro") : "Tema"}
+            {mounted ? (resolvedMode === "light" ? "Escuro" : "Claro") : "Tema"}
           </button>
         </div>
         <div className="px-0.5">

@@ -8,11 +8,19 @@
 
 ## Paleta e tema
 
-- Baseado no sistema de CSS variables do shadcn (`--background`, `--foreground`, `--muted`, `--border`, `--accent`, `--ring`...), usando a paleta **neutral** ou **zinc** como base — sem tons quentes/coloridos por padrão.
-- **Light**: fundo quase-branco, texto quase-preto, bordas cinza bem claras.
-- **Dark**: fundo cinza-muito-escuro (não preto puro — cansa menos visualmente), texto cinza-claro, bordas sutis.
-- Um único **accent color** (ex: um azul-acinzentado neutro) reservado exclusivamente para: item selecionado na sidebar, foco de input, cursor/seleção no editor. Nenhum outro elemento usa cor de destaque.
-- Alternância via `next-themes`: respeita `prefers-color-scheme` por padrão, com toggle manual discreto no rodapé da sidebar. Atalho `Ctrl/Cmd+D` também alterna o tema.
+- Baseado no sistema de CSS variables integrado ao Tailwind CSS v4 (`--background`, `--foreground`, `--muted`, `--border`, `--accent`, `--ring`...).
+- **3 Famílias / Paletas de Cores:**
+  1. **Catppuccin (Pastel Suave)**:
+     - **Frappé (Dark)**: Fundo `#303446` (Base), sidebar `#292c3c` (Mantle), texto `#c6d0f5` (lavanda suave), acento `#babbf1` (Lavender).
+     - **Latte (Light)**: Fundo `#eff1f5` (creme suave), sidebar `#e6e9ef`, texto `#4c4f69`, acento `#7287fd`.
+  2. **Discord (Suave / Baixo Contraste)**:
+     - **Dark**: Fundo cinza ardósia `#313338`, sidebar `#2b2d31`, texto suave `#dbdee1`, acento `#5865f2` (Blurple).
+     - **Light**: Fundo cinza suave `#f2f3f5`, sidebar `#e3e5e8`, texto chumbo `#2e3338`, acento `#5865f2`.
+  3. **Padrão / Clássico (Alto Contraste)**:
+     - **Dark**: Preto profundo `#09090b` / `#18181b` com texto branco puro `#fafafa`.
+     - **Light**: Branco puro `#ffffff` com texto preto.
+- A paleta global padrão é sincronizada no banco de dados (`Configuracao.tema`).
+- Alternância instantânea de modo (**Escuro** ⇄ **Claro**) via atalho global `Ctrl/Cmd+D` ou tecla `D` (quando fora de inputs), e pelo botão no rodapé da barra lateral.
 
 ## Tipografia
 
@@ -68,10 +76,13 @@ Chat lateral com o documento aberto.
 
 ## Syntax highlighting
 
-- `CustomCodeBlock` baseado em `@tiptap/extension-code-block-lowlight` com `lowlight` (core — não o `highlight.js` inteiro, bundle menor).
-- Linguagens registradas: `javascript`, `typescript`, `python`, `bash`, `json`, `css`, `html`, `sql`.
-- Tema do highlight: paleta neutra customizada via CSS variables próprias (`--code-keyword`, `--code-string`, `--code-comment`...), reescritas pra bater com as duas paletas (light/dark) do app.
-- Code block com botão de copiar e seletor de linguagem no canto superior direito.
+- `CustomCodeBlock` baseado em `@tiptap/extension-code-block-lowlight` com `lowlight`.
+- Linguagens e aliases registrados: `javascript` (`js`, `jsx`, `mjs`), `typescript` (`ts`, `tsx`), `python` (`py`), `bash` (`sh`, `zsh`), `json` (`jsonc`), `css` (`scss`), `html` (`xml`), `sql`.
+- Cores de sintaxe ricas e adaptativas por tema:
+  - **Catppuccin**: Mauve para palavras-chave, Blue para funções, Green para strings, Yellow para tipos, Peach para números/booleanos, Red para JSX tags, Teal para atributos.
+  - **Discord**: Coral pink em palavras-chave, Sky blue em funções, Emerald green em strings, Discord gold em tipos.
+  - **Clássico**: Esquema One Dark no modo escuro e GitHub Light no modo claro.
+- Code block com botão de copiar, animações iOS e seletor de linguagem no topo.
 
 ## Task Lists
 

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Settings } from "lucide-react"
+import { Settings, Palette, Shield, Bot, KeyRound, Sparkles, Sun, Moon, Laptop } from "lucide-react"
 import {
   atualizarPoliticasSeguranca,
   authenticatorEstaConfigurado,
@@ -16,6 +16,7 @@ import {
   type PoliticasSeguranca,
   validarAuthenticator,
 } from "@/actions/configuracoes"
+import { useTheme, type ThemePalette, type ThemeMode } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -23,7 +24,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 
 type AuthStep = "code" | "setup-key" | "scan" | "change-current" | "change-scan"
 
-type PolicyKey = Exclude<keyof PoliticasSeguranca, "acessoArquivo">
+type PolicyKey = Exclude<keyof PoliticasSeguranca, "acessoArquivo" | "tema">
 
 const policyLabels: { key: PolicyKey; title: string; description: string }[] = [
   { key: "exigirPinArvore", title: "Árvore de arquivos", description: "Exige o PIN uma vez por sessão para visualizar a árvore." },
@@ -55,6 +56,80 @@ const policyGroups: { title: string; description: string; keys: PolicyKey[] }[] 
     description: "Defina proteções para ações complementares da aplicação.",
     keys: ["exigirPinExportar", "exigirPinCommandBar", "exigirPinUploadImagem", "exigirPinChatAi"],
   },
+]
+
+const THEME_PALETTES: {
+  id: ThemePalette
+  name: string
+  tag?: string
+  desc: string
+  previewDark: { bg: string; sidebar: string; text: string; accent: string }
+  previewLight: { bg: string; sidebar: string; text: string; accent: string }
+}[] = [
+  {
+    id: "catppuccin",
+    name: "Catppuccin (Frappé & Latte)",
+    tag: "Descanso Visual",
+    desc: "Paleta pastel mundialmente aclamada. Inclui Frappé (escuro aveludado #303446) e Latte (claro macio #eff1f5).",
+    previewDark: {
+      bg: "#303446",
+      sidebar: "#292c3c",
+      text: "#c6d0f5",
+      accent: "#babbf1",
+    },
+    previewLight: {
+      bg: "#eff1f5",
+      sidebar: "#e6e9ef",
+      text: "#4c4f69",
+      accent: "#7287fd",
+    },
+  },
+  {
+    id: "discord",
+    name: "Discord (Suave / Menos Contraste)",
+    tag: "Recomendado",
+    desc: "Cores suaves e confortáveis tanto no modo Claro quanto no Escuro. Reduz o cansaço visual e elimina o contraste de '8 ou 80'.",
+    previewDark: {
+      bg: "#313338",
+      sidebar: "#2b2d31",
+      text: "#dbdee1",
+      accent: "#5865f2",
+    },
+    previewLight: {
+      bg: "#f2f3f5",
+      sidebar: "#e3e5e8",
+      text: "#2e3338",
+      accent: "#5865f2",
+    },
+  },
+  {
+    id: "normal",
+    name: "Padrão / Clássico (Alto Contraste)",
+    tag: "Original",
+    desc: "Branco puro (#ffffff) no claro e preto profundo (#09090b / #18181b) no escuro para alto contraste e telas OLED.",
+    previewDark: {
+      bg: "#09090b",
+      sidebar: "#18181b",
+      text: "#fafafa",
+      accent: "#ffffff",
+    },
+    previewLight: {
+      bg: "#ffffff",
+      sidebar: "#f4f4f5",
+      text: "#09090b",
+      accent: "#18181b",
+    },
+  },
+]
+
+const MODE_OPTIONS: {
+  id: ThemeMode
+  label: string
+  icon: typeof Moon
+}[] = [
+  { id: "dark", label: "Modo Escuro", icon: Moon },
+  { id: "light", label: "Modo Claro", icon: Sun },
+  { id: "system", label: "Sistema", icon: Laptop },
 ]
 
 function OtpInput({ value, onChange, disabled }: { value: string; onChange: (value: string) => void; disabled?: boolean }) {
@@ -101,6 +176,7 @@ function IosSwitch({
 }
 
 export function SettingsDialog() {
+  const { setPalette, mode: currentMode, setMode } = useTheme()
   const [authOpen, setAuthOpen] = React.useState(false)
   const [settingsOpen, setSettingsOpen] = React.useState(false)
   const [step, setStep] = React.useState<AuthStep>("code")
@@ -291,11 +367,18 @@ export function SettingsDialog() {
     ? "Digite um código válido do Authenticator atual antes de substituí-lo."
     : "Digite o código de 6 dígitos do Google Authenticator."
 
+  const activePalette: ThemePalette =
+    policies?.tema === "catppuccin"
+      ? "catppuccin"
+      : policies?.tema === "normal" || policies?.tema === "classico"
+      ? "normal"
+      : "discord"
+
   return (
     <>
       <button
         onClick={() => void abrirConfiguracoes()}
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-accent/50 transition-colors"
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-accent/50 transition-colors cursor-pointer"
       >
         <Settings className="size-3.5" />
         <span>Configurações</span>
@@ -332,22 +415,156 @@ export function SettingsDialog() {
       </Dialog>
 
       <Dialog open={settingsOpen} onOpenChange={(open) => { if (!open) void fecharPainel() }}>
-        <DialogContent className="h-[80vh] max-w-[calc(100%-2rem)] gap-0 overflow-hidden p-0 sm:max-w-[75vw]" showCloseButton={!loading}>
+        <DialogContent className="h-[84vh] max-w-[calc(100%-2rem)] gap-0 overflow-hidden p-0 sm:max-w-[78vw]" showCloseButton={!loading}>
           <DialogHeader className="border-b border-border/60 px-6 py-5 pr-12">
             <DialogTitle>Configurações</DialogTitle>
-            <DialogDescription>As mudanças desta área exigem uma sessão válida do Google Authenticator.</DialogDescription>
+            <DialogDescription>As preferências desta área são salvas no banco de dados e sincronizadas em qualquer dispositivo.</DialogDescription>
           </DialogHeader>
 
           <div className="grid flex-1 overflow-y-auto md:grid-cols-[13rem_1fr]">
-            <aside className="border-b border-border/60 bg-muted/30 p-4 md:border-r md:border-b-0">
-              <p className="text-xs font-medium text-foreground">Segurança e PIN</p>
-              <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">Defina quando o PIN comum será exigido.</p>
+            <aside className="border-b border-border/60 bg-muted/30 p-4 md:border-r md:border-b-0 space-y-4">
+              <div>
+                <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                  <Palette className="size-3.5 text-primary" />
+                  <span>Aparência e Tema</span>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">Escolha entre Catppuccin, Discord suave ou clássico de alto contraste.</p>
+              </div>
+
+              <div className="pt-2 border-t border-border/50">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                  <Bot className="size-3.5 text-primary" />
+                  <span>Provedores de IA</span>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">Configuração de chaves BYOK criptografadas.</p>
+              </div>
+
+              <div className="pt-2 border-t border-border/50">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                  <Shield className="size-3.5 text-primary" />
+                  <span>Segurança e PIN</span>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">Defina quando o PIN de 6 dígitos será exigido.</p>
+              </div>
             </aside>
+
             <section className="space-y-6 p-6">
+              {/* Seção Aparência e Tema */}
+              <div className="rounded-xl border border-border/60 p-4 space-y-4 bg-card shadow-xs">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium flex items-center gap-1.5">
+                      <Palette className="size-4 text-primary" />
+                      <span>Tema e Paleta de Cores</span>
+                    </h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Defina a paleta global do sistema. Os temas Catppuccin e Discord foram desenhados para conforto e descanso visual tanto no modo Claro quanto no Escuro.
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
+                    Sincronizado
+                  </span>
+                </div>
+
+                {/* Seletor de Paleta / Família de Tema */}
+                <div className="grid gap-3 sm:grid-cols-3 pt-1">
+                  {THEME_PALETTES.map((item) => {
+                    const isSelected = activePalette === item.id
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          if (!policies) return
+                          setPolicies({ ...policies, tema: item.id })
+                          setPalette(item.id)
+                        }}
+                        className={`cursor-pointer rounded-xl border p-4 transition-all duration-200 ios-press flex flex-col justify-between gap-3 ${
+                          isSelected
+                            ? "border-primary bg-primary/5 shadow-xs ring-1 ring-primary/40"
+                            : "border-border/60 hover:bg-muted/30"
+                        }`}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-semibold text-foreground">{item.name}</span>
+                              {item.tag && (
+                                <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                  {item.tag}
+                                </span>
+                              )}
+                            </div>
+                            <div
+                              className={`size-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                isSelected
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-muted-foreground/30"
+                              }`}
+                            >
+                              {isSelected && <div className="size-1.5 rounded-full bg-white" />}
+                            </div>
+                          </div>
+
+                          <p className="text-[11px] text-muted-foreground leading-snug">{item.desc}</p>
+                        </div>
+
+                        {/* Visual Color swatches preview for both Dark and Light within this palette */}
+                        <div className="rounded-lg border border-border/50 bg-background/50 p-2 space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>Modo Escuro:</span>
+                            <div className="flex items-center gap-1">
+                              <span className="size-3 rounded-full border border-border" style={{ backgroundColor: item.previewDark.bg }} title="Fundo" />
+                              <span className="size-3 rounded-full border border-border" style={{ backgroundColor: item.previewDark.sidebar }} title="Sidebar" />
+                              <span className="size-3 rounded-full border border-border" style={{ backgroundColor: item.previewDark.accent }} title="Acento" />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>Modo Claro:</span>
+                            <div className="flex items-center gap-1">
+                              <span className="size-3 rounded-full border border-border" style={{ backgroundColor: item.previewLight.bg }} title="Fundo" />
+                              <span className="size-3 rounded-full border border-border" style={{ backgroundColor: item.previewLight.sidebar }} title="Sidebar" />
+                              <span className="size-3 rounded-full border border-border" style={{ backgroundColor: item.previewLight.accent }} title="Acento" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Seletor de Modo (Escuro / Claro / Sistema) */}
+                <div className="pt-2 border-t border-border/50">
+                  <span className="block text-xs font-medium text-foreground mb-2">Modo de Exibição Atual:</span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {MODE_OPTIONS.map(({ id, label, icon: Icon }) => {
+                      const isSelected = currentMode === id
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => setMode(id)}
+                          className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-medium transition-all ios-press cursor-pointer ${
+                            isSelected
+                              ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
+                              : "border-border/60 hover:bg-muted/30 text-muted-foreground"
+                          }`}
+                        >
+                          <Icon className="size-3.5" />
+                          <span>{label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+
               {/* Seção Provedores de IA (BYOK) */}
-              <div className="rounded-lg border border-border/60 p-4 space-y-4">
+              <div className="rounded-xl border border-border/60 p-4 space-y-4 bg-card shadow-xs">
                 <div>
-                  <h3 className="text-sm font-medium">Provedores de IA (Bring Your Own Key)</h3>
+                  <h3 className="text-sm font-medium flex items-center gap-1.5">
+                    <Bot className="size-4 text-primary" />
+                    <span>Provedores de IA (Bring Your Own Key)</span>
+                  </h3>
                   <p className="mt-1 text-xs text-muted-foreground">Insira suas chaves de API com segurança. Elas são criptografadas e restritas à sua sessão autenticada.</p>
                 </div>
 
@@ -405,6 +622,7 @@ export function SettingsDialog() {
                 </div>
               </div>
 
+              {/* Seção Leitura de arquivos */}
               <div>
                 <h3 className="text-sm font-medium">Leitura de arquivos</h3>
                 <p className="mt-1 text-xs text-muted-foreground">Escolha como o acesso ao conteúdo de uma nota será protegido.</p>
@@ -432,6 +650,7 @@ export function SettingsDialog() {
                 </div>
               </div>
 
+              {/* Seção Ações protegidas */}
               <div className="space-y-5">
                 <h3 className="text-sm font-medium">Ações protegidas</h3>
                 {policies && policyGroups.map((group) => {
@@ -476,17 +695,21 @@ export function SettingsDialog() {
                 })}
               </div>
 
-              <div className="rounded-lg border border-border/60 p-4">
-                <h3 className="text-sm font-medium">Google Authenticator</h3>
-                <p className="mt-1 text-xs text-muted-foreground">Para trocar o dispositivo, confirme primeiro um código do Authenticator atual.</p>
-                <Button type="button" variant="outline" size="sm" className="mt-3" onClick={iniciarTroca}>Trocar Google Authenticator</Button>
+              {/* Seção Authenticator */}
+              <div className="rounded-xl border border-border/60 p-4 bg-card shadow-xs">
+                <h3 className="text-sm font-medium flex items-center gap-1.5">
+                  <KeyRound className="size-4 text-primary" />
+                  <span>Google Authenticator</span>
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">Para trocar o dispositivo autenticador, confirme primeiro um código do Authenticator atual.</p>
+                <Button type="button" variant="outline" size="sm" className="mt-3 ios-press" onClick={iniciarTroca}>Trocar Google Authenticator</Button>
               </div>
               {error && <p className="text-xs text-destructive">{error}</p>}
             </section>
           </div>
 
           <DialogFooter className="mx-0 mb-0 rounded-none px-6 py-4">
-            {saved && <span className="mr-auto self-center text-xs text-muted-foreground">Configurações salvas.</span>}
+            {saved && <span className="mr-auto self-center text-xs text-muted-foreground flex items-center gap-1"><Sparkles className="size-3 text-emerald-500" /> Configurações salvas.</span>}
             <Button type="button" variant="outline" disabled={loading} onClick={() => void fecharPainel()}>Fechar</Button>
             <Button type="button" disabled={loading || !policies} onClick={() => void salvarPoliticas()}>{loading ? "Salvando..." : "Salvar alterações"}</Button>
           </DialogFooter>

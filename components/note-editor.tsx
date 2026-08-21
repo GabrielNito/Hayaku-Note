@@ -108,6 +108,15 @@ lowlight.register("json", json)
 lowlight.register("css", css)
 lowlight.register("html", xml)
 lowlight.register("sql", sql)
+lowlight.registerAlias({
+  javascript: ["js", "jsx", "mjs", "cjs"],
+  typescript: ["ts", "tsx", "mts", "cts"],
+  python: ["py", "python3"],
+  bash: ["sh", "zsh", "shell"],
+  html: ["xml", "xhtml", "svg"],
+  css: ["scss", "less"],
+  json: ["jsonc"],
+})
 
 const CustomParagraph = Paragraph.extend({
   addStorage() {

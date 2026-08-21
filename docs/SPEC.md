@@ -52,6 +52,8 @@ model Configuracao {
   // TOTP (Google Authenticator)
   totpSecretCriptografado      String?
   totpConfiguradoEm            DateTime?
+  // Tema e paleta sincronizada
+  tema                         String    @default("discord")
   // Políticas de segurança granulares
   exigirPinArvore              Boolean   @default(false)
   acessoArquivo                String    @default("LIVRE")  // "LIVRE" | "SESSAO" | "POR_ARQUIVO"
@@ -101,12 +103,13 @@ TOTP_ENCRYPTION_KEY=   # chave Base64 de 32 bytes para criptografar o segredo TO
 3. A Server Action valida o PIN via `bcrypt.compare` e, se válido, executa a mutação.
 4. Após validação bem-sucedida, a ação pode conceder um **scope de sessão** — ex.: `liberarAcesso(pin, ["upload"])` armazena um token JWT em cookie httpOnly. Isso permite que ações secundárias não exijam re-digitação na mesma sessão de browser.
 
-### 4.2 Políticas de segurança granulares
+### 4.2 Políticas de segurança granulares e preferências
 
 Todas as políticas são configuráveis na tela de Configurações (protegida por TOTP) e persistidas no modelo `Configuracao`. Políticas disponíveis:
 
-| Política | Default | Descrição |
+| Configuração / Política | Default | Descrição |
 |---|---|---|
+| `tema` | `"discord"` | Paleta global sincronizada: `"catppuccin"`, `"discord"` ou `"normal"` |
 | `exigirPinArvore` | `false` | Exige PIN para visualizar a árvore de arquivos |
 | `acessoArquivo` | `"LIVRE"` | Controle de acesso a arquivos: `LIVRE`, `SESSAO` ou `POR_ARQUIVO` |
 | `exigirPinCriar` | `true` | PIN para criar pasta ou arquivo |

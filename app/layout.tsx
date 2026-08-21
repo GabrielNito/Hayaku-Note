@@ -7,6 +7,8 @@ import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { cn } from "@/lib/utils";
 
+import { obterPoliticasAtuais } from "@/lib/security-policies"
+
 const geist = Geist({subsets:['latin'],variable:'--font-sans'})
 
 const fontMono = Geist_Mono({
@@ -22,11 +24,14 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const politicas = await obterPoliticasAtuais()
+  const tema = politicas.tema || "discord"
+
   return (
     <html
       lang="pt-BR"
@@ -34,7 +39,7 @@ export default function RootLayout({
       className={cn("antialiased", fontMono.variable, "font-sans", geist.variable)}
     >
       <body suppressHydrationWarning>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider initialTheme={tema}>{children}</ThemeProvider>
         <Analytics />
         <SpeedInsights />
       </body>

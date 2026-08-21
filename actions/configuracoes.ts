@@ -28,6 +28,7 @@ export type PoliticasSeguranca = {
   exigirPinCommandBar: boolean
   exigirPinUploadImagem: boolean
   exigirPinChatAi: boolean
+  tema: string
 }
 
 const politicasPadrao: PoliticasSeguranca = {
@@ -43,6 +44,7 @@ const politicasPadrao: PoliticasSeguranca = {
   exigirPinCommandBar: true,
   exigirPinUploadImagem: true,
   exigirPinChatAi: true,
+  tema: "discord",
 }
 
 async function obterConfiguracao() {
@@ -81,6 +83,7 @@ function paraPoliticas(configuracao: Awaited<ReturnType<typeof obterConfiguracao
     exigirPinCommandBar: configuracao.exigirPinCommandBar,
     exigirPinUploadImagem: configuracao.exigirPinUploadImagem,
     exigirPinChatAi: configuracao.exigirPinChatAi,
+    tema: configuracao.tema || "discord",
   }
 }
 
@@ -144,12 +147,46 @@ export async function obterPoliticasSeguranca(): Promise<PoliticasSeguranca> {
   return paraPoliticas(await obterConfiguracao())
 }
 
+export async function obterTemaConfigurado(): Promise<string> {
+  const configuracao = await obterConfiguracao()
+  return configuracao.tema || "discord"
+}
+
+export async function atualizarTema(tema: string): Promise<{ success: boolean; error?: string }> {
+  await exigirSessaoConfiguracoes()
+  if (!["catppuccin", "discord", "normal", "classico"].includes(tema)) {
+    return { success: false, error: "Tema inválido." }
+  }
+  await prisma.configuracao.update({
+    where: { id: CONFIGURACAO_ID },
+    data: { tema: tema === "classico" ? "normal" : tema },
+  })
+  return { success: true }
+}
+
 export async function atualizarPoliticasSeguranca(politicas: PoliticasSeguranca): Promise<{ success: boolean; error?: string }> {
   await exigirSessaoConfiguracoes()
   if (!["LIVRE", "SESSAO", "POR_ARQUIVO"].includes(politicas.acessoArquivo)) {
     return { success: false, error: "Regra de acesso a arquivo inválida." }
   }
-  await prisma.configuracao.update({ where: { id: CONFIGURACAO_ID }, data: politicas })
+  await prisma.configuracao.update({
+    where: { id: CONFIGURACAO_ID },
+    data: {
+      exigirPinArvore: politicas.exigirPinArvore,
+      acessoArquivo: politicas.acessoArquivo,
+      exigirPinCriar: politicas.exigirPinCriar,
+      exigirPinEditar: politicas.exigirPinEditar,
+      exigirPinRenomear: politicas.exigirPinRenomear,
+      exigirPinMoverCopiar: politicas.exigirPinMoverCopiar,
+      exigirPinExcluir: politicas.exigirPinExcluir,
+      exigirPinExportar: politicas.exigirPinExportar,
+      exigirPinBusca: politicas.exigirPinBusca,
+      exigirPinCommandBar: politicas.exigirPinCommandBar,
+      exigirPinUploadImagem: politicas.exigirPinUploadImagem,
+      exigirPinChatAi: politicas.exigirPinChatAi,
+      tema: politicas.tema || "discord",
+    },
+  })
   return { success: true }
 }
 
