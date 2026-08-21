@@ -49,11 +49,11 @@ const CodeBlockComponent = ({ node, updateAttributes }: NodeViewProps) => {
   }
 
   return (
-    <NodeViewWrapper className="my-4 rounded-lg border border-border/60 bg-[var(--code-bg)] overflow-hidden group shadow-sm">
+    <NodeViewWrapper className="my-4 rounded-lg border border-border/60 bg-[var(--code-bg)] relative group shadow-sm">
       {/* Top bar */}
       <div
         contentEditable={false}
-        className="h-9 px-3.5 bg-muted/30 border-b border-border/40 flex items-center justify-between text-xs font-sans text-muted-foreground select-none"
+        className="h-9 px-3.5 bg-muted/30 border-b border-border/40 flex items-center justify-between text-xs font-sans text-muted-foreground select-none rounded-t-lg"
       >
         <div ref={menuRef} className="relative" onMouseDown={(e) => e.stopPropagation()}>
           <button
@@ -69,7 +69,7 @@ const CodeBlockComponent = ({ node, updateAttributes }: NodeViewProps) => {
           </button>
 
           {isLangOpen && (
-            <div className="absolute left-0 top-full mt-1 z-50 min-w-44 w-48 rounded-xl border border-border/60 bg-popover p-1 text-popover-foreground shadow-xl animate-in fade-in-0 zoom-in-95 duration-150 font-sans max-h-64 overflow-y-auto">
+            <div className="absolute left-0 top-full mt-1 z-50 min-w-44 w-48 rounded-xl border border-border/60 bg-popover p-1 text-popover-foreground shadow-2xl animate-in fade-in-0 zoom-in-95 duration-150 font-sans max-h-64 overflow-y-auto">
               {LANGUAGES.map((lang) => (
                 <button
                   key={lang.value || "none"}
@@ -114,7 +114,7 @@ const CodeBlockComponent = ({ node, updateAttributes }: NodeViewProps) => {
       </div>
 
       {/* Code content area */}
-      <div className="py-2 px-4 overflow-x-auto max-w-full">
+      <div className="py-2 px-4 overflow-x-auto max-w-full rounded-b-lg">
         <pre className="m-0 bg-transparent p-0 font-mono text-xs text-[var(--code-fg)] leading-relaxed whitespace-pre !whitespace-pre">
           <NodeViewContent className="outline-none whitespace-pre !whitespace-pre block" />
         </pre>

@@ -87,7 +87,7 @@ export function PinDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className={`sm:max-w-100 px-0 transition-all duration-200 ${shake ? "animate-ios-shake ring-2 ring-destructive/50" : ""}`}>
+      <AlertDialogContent className={`sm:max-w-100 px-0 transition-all duration-200 ${error ? "ring-2 ring-destructive/50" : ""}`}>
         <AlertDialogHeader className="px-4">
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
@@ -105,7 +105,7 @@ export function PinDialog({
             disabled={loading}
             autoFocus
           >
-            <InputOTPGroup>
+            <InputOTPGroup className={`transition-transform duration-200 ${shake ? "animate-ios-shake" : ""}`}>
               <InputOTPSlot index={0} />
               <InputOTPSlot index={1} />
               <InputOTPSlot index={2} />
