@@ -12,46 +12,80 @@ interface ThemeContextType {
 
 const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined)
 
+function getStoredTheme(): Theme {
+  if (typeof window === "undefined") return "system"
+  const val = localStorage.getItem("theme")
+  if (val === "dark" || val === "light" || val === "system") return val
+  return "system"
+}
+
+function getSystemTheme(): "dark" | "light" {
+  if (typeof window === "undefined") return "light"
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+}
+
+let themeListeners: Array<() => void> = []
+
+function notifyThemeChange() {
+  for (const listener of themeListeners) {
+    listener()
+  }
+}
+
+function subscribeToTheme(callback: () => void) {
+  themeListeners.push(callback)
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+  const handleMedia = () => callback()
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === "theme") callback()
+  }
+  mediaQuery.addEventListener("change", handleMedia)
+  window.addEventListener("storage", handleStorage)
+
+  return () => {
+    themeListeners = themeListeners.filter((l) => l !== callback)
+    mediaQuery.removeEventListener("change", handleMedia)
+    window.removeEventListener("storage", handleStorage)
+  }
+}
+
 export function ThemeProvider({
   children,
 }: {
   children: React.ReactNode
-  attribute?: string
-  defaultTheme?: string
-  enableSystem?: boolean
-  disableTransitionOnChange?: boolean
 }) {
-  const [theme, setThemeState] = React.useState<Theme>("system")
-  const [resolvedTheme, setResolvedTheme] = React.useState<"dark" | "light">("light")
+  const theme = React.useSyncExternalStore(
+    subscribeToTheme,
+    getStoredTheme,
+    () => "system" as Theme
+  )
+
+  const systemTheme = React.useSyncExternalStore(
+    subscribeToTheme,
+    getSystemTheme,
+    () => "light" as "dark" | "light"
+  )
+
+  const resolvedTheme: "dark" | "light" = theme === "system" ? systemTheme : theme
 
   React.useEffect(() => {
-    const saved = localStorage.getItem("theme") as Theme
-    if (saved) {
-      setThemeState(saved)
-    }
-  }, [])
-
-  React.useLayoutEffect(() => {
     const root = document.documentElement
     root.classList.remove("light", "dark")
-
-    let effectiveTheme = theme
-    if (theme === "system") {
-      effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-    }
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setResolvedTheme(effectiveTheme as "dark" | "light")
-    root.classList.add(effectiveTheme)
-  }, [theme])
+    root.classList.add(resolvedTheme)
+  }, [resolvedTheme])
 
   const setTheme = React.useCallback((newTheme: Theme) => {
-    setThemeState(newTheme)
     localStorage.setItem("theme", newTheme)
+    notifyThemeChange()
   }, [])
 
+  const contextValue = React.useMemo(
+    () => ({ theme, setTheme, resolvedTheme }),
+    [theme, setTheme, resolvedTheme]
+  )
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
+    <ThemeContext.Provider value={contextValue}>
       <ThemeHotkey />
       {children}
     </ThemeContext.Provider>

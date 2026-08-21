@@ -23,6 +23,20 @@ import {
 import { Bot, User, Send, ChevronDown, Sparkles, Loader2, X, MessageSquare, AlertCircle, Copy, Check, FileText } from "lucide-react";
 import { verificarApiKeysConfiguradas } from "@/actions/configuracoes";
 
+type Provider = "google" | "openai" | "anthropic";
+
+interface ChatMessagePart {
+  type: string;
+  text?: string;
+}
+
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant" | "system" | string;
+  parts?: ChatMessagePart[];
+  content?: string;
+}
+
 interface DocumentChatProps {
   isOpen: boolean;
   onClose: () => void;
@@ -32,13 +46,18 @@ interface DocumentChatProps {
   setProvider: (p: Provider) => void;
   model: string;
   setModel: (m: string) => void;
-  messages: any[];
-  sendMessage: (message: { text: string }, options?: any) => Promise<any>;
+  messages: ChatMessage[];
+  sendMessage: (message: { text: string }, options?: { headers?: Record<string, string>; body?: Record<string, unknown> }) => Promise<unknown>;
   status: string;
-  error: any;
+  error?: Error | { message?: string } | null;
 }
 
-type Provider = "google" | "openai" | "anthropic";
+function getMessageText(message: ChatMessage): string {
+  if (message.parts && message.parts.length > 0) {
+    return message.parts.map((p) => (p.type === "text" && p.text ? p.text : "")).join("");
+  }
+  return message.content || "";
+}
 
 const PROVIDER_MODELS: Record<Provider, { id: string; name: string }[]> = {
   google: [
@@ -104,12 +123,7 @@ export function DocumentChat({
     if (status === "submitted" || status === "streaming" || !onProposeEdit) return;
     const lastMsg = messages[messages.length - 1];
     if (lastMsg && lastMsg.role === "assistant" && !processedProposalIdsRef.current.has(lastMsg.id)) {
-      const textContent =
-        lastMsg.parts
-          ?.map((p: any) => (p.type === "text" ? p.text : ""))
-          .join("") ||
-        (lastMsg as any).content ||
-        "";
+      const textContent = getMessageText(lastMsg);
 
       const tagMatch = textContent.match(/<proposed_edit\s*([\s\S]*?)>([\s\S]*?)<\/proposed_edit>/)
         || textContent.match(/<proposed_document>([\s\S]*?)<\/proposed_document>/);
@@ -292,12 +306,7 @@ export function DocumentChat({
           <>
             <Marker>Início da Conversa</Marker>
             {messages.map((m) => {
-              const textContent =
-                m.parts
-                  ?.map((p: any) => (p.type === "text" ? p.text : ""))
-                  .join("") ||
-                (m as any).content ||
-                "";
+              const textContent = getMessageText(m);
 
               const displayText = textContent
                 .replace(/<proposed_edit[\s\S]*?<\/proposed_edit>/g, "")
@@ -307,7 +316,7 @@ export function DocumentChat({
               return (
                 <Message
                   key={m.id}
-                  role={m.role as any}
+                  role={m.role === "user" ? "user" : "assistant"}
                   avatar={m.role === "user" ? <User className="size-4" /> : <Bot className="size-4" />}
                 >
                   {displayText && (
@@ -346,7 +355,7 @@ export function DocumentChat({
 
         {error && (
           <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-xs border border-destructive/20 animate-ios-shake">
-            <strong>Erro:</strong> {error.message || "Ocorreu um erro ao processar a requisição."}
+            <strong>Erro:</strong> {error instanceof Error ? error.message : typeof error === "object" && error !== null && "message" in error && typeof error.message === "string" ? error.message : "Ocorreu um erro ao processar a requisição."}
           </div>
         )}
       </MessageScroller>

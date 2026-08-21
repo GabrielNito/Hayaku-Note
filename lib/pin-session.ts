@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { createHash } from "node:crypto"
 import { SignJWT, jwtVerify } from "jose"
 import { cookies } from "next/headers"
@@ -31,7 +32,7 @@ export async function temAcessosPin(scopes: string[]) {
   return scopes.every((scope) => access.includes(scope))
 }
 
-async function lerAcessosPin(): Promise<string[]> {
+const lerAcessosPin = cache(async (): Promise<string[]> => {
   try {
     const token = (await cookies()).get(COOKIE_NAME)?.value
     if (!token) return []
@@ -40,4 +41,5 @@ async function lerAcessosPin(): Promise<string[]> {
   } catch {
     return []
   }
-}
+})
+

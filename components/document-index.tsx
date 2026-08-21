@@ -19,38 +19,55 @@ interface DocumentIndexProps {
   isChatOpen?: boolean
 }
 
+function extractHeadings(editor: Editor | null): HeadingItem[] {
+  if (!editor || editor.isDestroyed) return []
+  const items: HeadingItem[] = []
+  editor.state.doc.descendants((node) => {
+    if (node.type.name === "heading") {
+      const level = node.attrs.level as number
+      if (level >= 1 && level <= 3) {
+        items.push({
+          level,
+          text: node.textContent || "Cabeçalho sem título",
+          index: items.length,
+        })
+      }
+    }
+  })
+  return items
+}
+
 export function DocumentIndex({ editor, isChatOpen }: DocumentIndexProps) {
   const isMobile = useIsMobile()
   const [isOpen, setIsOpen] = React.useState(true)
   const [isHighlighted, setIsHighlighted] = React.useState(false)
-  const [headings, setHeadings] = React.useState<HeadingItem[]>([])
+  const [headings, setHeadings] = React.useState<HeadingItem[]>(() => extractHeadings(editor))
   const [mobileOpen, setMobileOpen] = React.useState(false)
 
-  // Extract headings whenever editor content updates
+  // Extract headings with debounce whenever editor content updates
   React.useEffect(() => {
     if (!editor) return
 
-    function updateHeadings() {
-      const items: HeadingItem[] = []
-      editor?.state.doc.descendants((node) => {
-        if (node.type.name === "heading") {
-          const level = node.attrs.level as number
-          if (level >= 1 && level <= 3) {
-            items.push({
-              level,
-              text: node.textContent || "Cabeçalho sem título",
-              index: items.length,
-            })
-          }
-        }
-      })
-      setHeadings(items)
-    }
+    let timeoutId: NodeJS.Timeout | null = null
 
-    updateHeadings()
+    function updateHeadings() {
+      if (timeoutId) clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        if (!editor || editor.isDestroyed) return
+        const items = extractHeadings(editor)
+
+        setHeadings((prev) => {
+          if (prev.length === items.length && prev.every((p, i) => p.level === items[i]?.level && p.text === items[i]?.text)) {
+            return prev
+          }
+          return items
+        })
+      }, 250)
+    }
 
     editor.on("update", updateHeadings)
     return () => {
+      if (timeoutId) clearTimeout(timeoutId)
       editor.off("update", updateHeadings)
     }
   }, [editor])

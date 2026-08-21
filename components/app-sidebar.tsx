@@ -2,8 +2,9 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
+import dynamic from "next/dynamic"
 import { useRouter, usePathname } from "next/navigation"
-import { motion, AnimatePresence } from "motion/react"
 import {
   ChevronRight,
   MoreVertical,
@@ -43,7 +44,11 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { SettingsDialog } from "@/components/settings-dialog"
+
+const SettingsDialog = dynamic(
+  () => import("@/components/settings-dialog").then((m) => m.SettingsDialog),
+  { ssr: false }
+)
 
 interface SidebarTreeProps {
   arvore: NoItem[]
@@ -345,38 +350,21 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
         </div>
       </div>
 
-      {/* Children tree with smooth spring height animation */}
-      {isPasta && (
-        <AnimatePresence initial={false}>
-          {isOpen && item.filhos && item.filhos.length > 0 && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{
-                height: "auto",
-                opacity: 1,
-                transition: {
-                  height: { duration: 0.25, ease: [0.32, 0.72, 0, 1] },
-                  opacity: { duration: 0.2, ease: "easeOut" },
-                },
-              }}
-              exit={{
-                height: 0,
-                opacity: 0,
-                transition: {
-                  height: { duration: 0.2, ease: [0.32, 0.72, 0, 1] },
-                  opacity: { duration: 0.15, ease: "easeIn" },
-                },
-              }}
-              className="overflow-hidden"
-            >
-              <div className="pl-3 ml-2 border-l border-border/40 flex flex-col gap-0.5 mt-0.5">
-                {item.filhos.map((filho) => (
-                  <NoTreeNode key={filho.id} item={filho} activeId={activeId} />
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* Children tree with smooth CSS GPU-accelerated transition */}
+      {isPasta && item.filhos && item.filhos.length > 0 && (
+        <div
+          className={`grid transition-[grid-template-rows,opacity] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+            isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="pl-3 ml-2 border-l border-border/40 flex flex-col gap-0.5 mt-0.5">
+              {item.filhos.map((filho) => (
+                <NoTreeNode key={filho.id} item={filho} activeId={activeId} />
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Action Dialogs */}
@@ -588,7 +576,7 @@ export function AppSidebar({ arvore, activeId }: SidebarTreeProps) {
       <SidebarHeader className="p-3 border-b border-border/50">
         <div className="flex items-center justify-between mb-2">
           <Link href="/" className="font-semibold text-xs tracking-tight text-foreground flex items-center gap-1.5">
-            <img src="/icon.ico" alt="Logo" className="size-4 rounded-sm object-contain" />
+            <Image src="/icon.ico" alt="Logo" width={16} height={16} className="size-4 rounded-sm object-contain" />
             Hayaku Note
           </Link>
           <div className="flex items-center gap-1">

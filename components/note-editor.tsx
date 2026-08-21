@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { useEditor, EditorContent, NodeViewWrapper, NodeViewContent, ReactNodeViewRenderer } from "@tiptap/react"
+import dynamic from "next/dynamic"
+import { useEditor, EditorContent, NodeViewWrapper, NodeViewContent, ReactNodeViewRenderer, type NodeViewProps } from "@tiptap/react"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import Paragraph from "@tiptap/extension-paragraph"
@@ -13,6 +14,53 @@ import { Markdown } from "tiptap-markdown"
 import TaskList from "@tiptap/extension-task-list"
 import TaskItem from "@tiptap/extension-task-item"
 import { Checkbox } from "@/components/ui/checkbox"
+import { CustomCodeBlock } from "@/components/extensions/code-block"
+import { CustomTableBlock } from "@/components/extensions/table"
+import { normalizeMarkdownTables } from "@/lib/markdown-table"
+import { ResizableImage } from "@/components/resizable-image"
+import { createLowlight } from "lowlight"
+import js from "highlight.js/lib/languages/javascript"
+import ts from "highlight.js/lib/languages/typescript"
+import py from "highlight.js/lib/languages/python"
+import bash from "highlight.js/lib/languages/bash"
+import json from "highlight.js/lib/languages/json"
+import css from "highlight.js/lib/languages/css"
+import xml from "highlight.js/lib/languages/xml"
+import sql from "highlight.js/lib/languages/sql"
+import { salvarConteudo } from "@/actions/no"
+import { PinDialog } from "@/components/pin-dialog"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
+import { uploadFiles } from "@/lib/uploadthing"
+import { Download, Sparkles, Search, Terminal, Table as TableIcon } from "lucide-react"
+import { liberarAcesso } from "@/actions/acesso"
+import { verificarAcessoChatAi } from "@/actions/configuracoes"
+import { AiProposalBlock } from "@/components/extensions/ai-proposal-block"
+import { DocumentIndex } from "@/components/document-index"
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { Sheet, SheetContent } from "@/components/ui/sheet"
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model"
+
+const DocumentChat = dynamic(
+  () => import("@/components/document-chat").then((m) => m.DocumentChat),
+  {
+    loading: () => (
+      <div className="flex h-full w-full items-center justify-center p-6 text-xs text-muted-foreground">
+        Carregando Assistente...
+      </div>
+    ),
+    ssr: false,
+  }
+)
 
 const CustomCode = Code.extend({
   addInputRules() {
@@ -25,9 +73,8 @@ const CustomCode = Code.extend({
   },
 })
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const TaskItemComponent = ({ node, updateAttributes }: { node: any; updateAttributes: (attrs: any) => void }) => {
-  const isChecked = node.attrs.checked
+const TaskItemComponent = ({ node, updateAttributes }: NodeViewProps) => {
+  const isChecked = Boolean(node.attrs.checked)
 
   return (
     <NodeViewWrapper as="li" data-checked={isChecked} className="flex items-center gap-2 my-1">
@@ -51,45 +98,8 @@ const CustomTaskItem = TaskItem.extend({
     return ReactNodeViewRenderer(TaskItemComponent)
   },
 })
-import { CustomCodeBlock } from "@/components/extensions/code-block"
-import { CustomTableBlock } from "@/components/extensions/table"
-import { normalizeMarkdownTables } from "@/lib/markdown-table"
-import { ResizableImage } from "@/components/resizable-image"
-import { common, createLowlight } from "lowlight"
-import js from "highlight.js/lib/languages/javascript"
-import ts from "highlight.js/lib/languages/typescript"
-import py from "highlight.js/lib/languages/python"
-import bash from "highlight.js/lib/languages/bash"
-import json from "highlight.js/lib/languages/json"
-import css from "highlight.js/lib/languages/css"
-import xml from "highlight.js/lib/languages/xml"
-import sql from "highlight.js/lib/languages/sql"
-import { salvarConteudo } from "@/actions/no"
-import { PinDialog } from "@/components/pin-dialog"
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { useRouter } from "next/navigation"
-import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
-import { uploadFiles } from "@/lib/uploadthing"
-import { Download, Sparkles, Search, Terminal, Table as TableIcon } from "lucide-react"
-import { liberarAcesso } from "@/actions/acesso"
-import { verificarAcessoChatAi } from "@/actions/configuracoes"
-import { DocumentChat } from "@/components/document-chat"
-import { AiProposalBlock } from "@/components/extensions/ai-proposal-block"
-import { DocumentIndex } from "@/components/document-index"
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
-import { useIsMobile } from "@/hooks/use-mobile"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
-import { ScrollArea } from "@/components/ui/scroll-area"
 
-const lowlight = createLowlight(common)
+const lowlight = createLowlight()
 lowlight.register("javascript", js)
 lowlight.register("typescript", ts)
 lowlight.register("python", py)
@@ -136,7 +146,6 @@ export function NoteEditor({
   exigirPinExportar,
   exigirPinUploadImagem,
 }: NoteEditorProps) {
-  const router = useRouter()
   const { toggleSidebar } = useSidebar()
   const isMobile = useIsMobile()
   const [isDirty, setIsDirty] = React.useState(false)
@@ -144,7 +153,6 @@ export function NoteEditor({
   const [showPinModal, setShowPinModal] = React.useState(false)
   const [pendingSaveContent, setPendingSaveContent] = React.useState("")
   const [prevNoId, setPrevNoId] = React.useState(noId)
-  const [prevInitialContent, setPrevInitialContent] = React.useState(initialContent)
   const normalizedInitial = React.useMemo(() => normalizeMarkdownTables(initialContent), [initialContent])
   const [savedContent, setSavedContent] = React.useState(normalizedInitial)
   const [showExportPinModal, setShowExportPinModal] = React.useState(false)
@@ -156,6 +164,13 @@ export function NoteEditor({
   const [chatModel, setChatModel] = React.useState<string>("gemini-3.5-flash")
   const [showUnsavedDialog, setShowUnsavedDialog] = React.useState(false)
   const [pendingNavigationCallback, setPendingNavigationCallback] = React.useState<(() => void) | null>(null)
+  const dirtyTimerRef = React.useRef<NodeJS.Timeout | null>(null)
+
+  React.useEffect(() => {
+    return () => {
+      if (dirtyTimerRef.current) clearTimeout(dirtyTimerRef.current)
+    }
+  }, [])
 
   React.useEffect(() => {
     window.__checkUnsavedChangesBeforeNav = (cb: () => void) => {
@@ -173,7 +188,6 @@ export function NoteEditor({
 
   if (noId !== prevNoId) {
     setPrevNoId(noId)
-    setPrevInitialContent(initialContent)
     setSavedContent(normalizeMarkdownTables(initialContent))
     setIsDirty(false)
     setLastSavedTime(null)
@@ -256,16 +270,19 @@ export function NoteEditor({
       },
     },
     onUpdate: ({ editor }) => {
-      // @ts-expect-error getMarkdown
-      const markdown = editor.storage.markdown.getMarkdown() as string
-      setIsDirty(markdown !== savedContent)
+      if (dirtyTimerRef.current) clearTimeout(dirtyTimerRef.current)
+      dirtyTimerRef.current = setTimeout(() => {
+        const mdStorage = editor.storage as { markdown?: { getMarkdown: () => string } }
+        const markdown = mdStorage.markdown?.getMarkdown() ?? ""
+        setIsDirty(markdown !== savedContent)
+      }, 250)
     },
   })
 
   const getDocumentContent = React.useCallback(() => {
     if (!editor) return initialContent
-    // @ts-expect-error getMarkdown
-    return (editor.storage.markdown.getMarkdown() as string) || initialContent
+    const mdStorage = editor.storage as { markdown?: { getMarkdown: () => string } }
+    return mdStorage.markdown?.getMarkdown() || initialContent
   }, [editor, initialContent])
 
   const { messages, sendMessage, status, error } = useChat({
@@ -295,8 +312,8 @@ export function NoteEditor({
 
   const handleTriggerSave = React.useCallback(() => {
     if (!editor) return
-    // @ts-expect-error getMarkdown
-    const currentMarkdown = editor.storage.markdown.getMarkdown() as string
+    const mdStorage = editor.storage as { markdown?: { getMarkdown: () => string } }
+    const currentMarkdown = mdStorage.markdown?.getMarkdown() || ""
     setPendingSaveContent(currentMarkdown)
     setShowPinModal(true)
   }, [editor])
@@ -304,8 +321,8 @@ export function NoteEditor({
   const handleExportMarkdown = React.useCallback(() => {
     if (!editor) return
 
-    // @ts-expect-error getMarkdown
-    const markdown = editor.storage.markdown.getMarkdown() as string
+    const mdStorage = editor.storage as { markdown?: { getMarkdown: () => string } }
+    const markdown = mdStorage.markdown?.getMarkdown() || ""
     const noteName = caminhoBreadcrumb.at(-1)?.nome || "nota"
     const fileName = `${noteName
       .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "-")
@@ -341,7 +358,7 @@ export function NoteEditor({
     setIsChatOpen(true)
   }
 
-  async function handleToggleChat() {
+  const handleToggleChat = React.useCallback(async () => {
     if (isChatOpen) {
       setIsChatOpen(false)
       return
@@ -356,19 +373,19 @@ export function NoteEditor({
     } catch {
       setIsChatOpen(true)
     }
-  }
+  }, [isChatOpen])
 
   // Whenever active note changes (switching notes), update editor content and focus start
   React.useEffect(() => {
     if (editor && savedContent) {
-      // @ts-expect-error markdown storage
-      const currentMd = editor.storage.markdown.getMarkdown() as string
+      const mdStorage = editor.storage as { markdown?: { getMarkdown: () => string } }
+      const currentMd = mdStorage.markdown?.getMarkdown() ?? ""
       if (currentMd !== savedContent) {
         editor.commands.setContent(savedContent)
       }
       editor.commands.focus("start")
     }
-  }, [noId, editor])
+  }, [noId, editor, savedContent])
 
   // Global shortcuts for Save (Ctrl+S), Sidebar (Ctrl+Shift+B), Bold (Ctrl+B), and AI Chat (Ctrl+/)
   React.useEffect(() => {
@@ -498,7 +515,7 @@ export function NoteEditor({
           let isHeadingSection = false
           let found = false
 
-          doc.forEach((node: any, offset: number) => {
+          doc.forEach((node: ProseMirrorNode, offset: number) => {
             if (found && isHeadingSection) {
               if (node.type.name === "heading") {
                 isHeadingSection = false
