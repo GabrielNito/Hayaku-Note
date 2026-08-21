@@ -440,6 +440,11 @@ html.dark.theme-catppuccin {
   scrollbar-width: none;
 }
 
+/* Smooth Cursor Mode */
+.smooth-cursor-active .ProseMirror {
+  caret-color: transparent !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
     animation-duration: 0.01ms !important;

@@ -29,6 +29,7 @@ export type PoliticasSeguranca = {
   exigirPinUploadImagem: boolean
   exigirPinChatAi: boolean
   tema: string
+  smoothCursor: boolean
 }
 
 const politicasPadrao: PoliticasSeguranca = {
@@ -45,6 +46,7 @@ const politicasPadrao: PoliticasSeguranca = {
   exigirPinUploadImagem: true,
   exigirPinChatAi: true,
   tema: "discord",
+  smoothCursor: true,
 }
 
 async function obterConfiguracao() {
@@ -84,6 +86,7 @@ function paraPoliticas(configuracao: Awaited<ReturnType<typeof obterConfiguracao
     exigirPinUploadImagem: configuracao.exigirPinUploadImagem,
     exigirPinChatAi: configuracao.exigirPinChatAi,
     tema: configuracao.tema || "discord",
+    smoothCursor: configuracao.smoothCursor ?? true,
   }
 }
 
@@ -185,6 +188,7 @@ export async function atualizarPoliticasSeguranca(politicas: PoliticasSeguranca)
       exigirPinUploadImagem: politicas.exigirPinUploadImagem,
       exigirPinChatAi: politicas.exigirPinChatAi,
       tema: politicas.tema || "discord",
+      smoothCursor: politicas.smoothCursor ?? true,
     },
   })
   return { success: true }

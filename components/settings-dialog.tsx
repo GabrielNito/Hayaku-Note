@@ -556,6 +556,23 @@ export function SettingsDialog() {
                     })}
                   </div>
                 </div>
+
+                {/* Cursor Suave (Desktop) */}
+                <div className="pt-3 border-t border-border/50 flex items-center justify-between gap-4">
+                  <div className="space-y-0.5">
+                    <span className="block text-xs font-medium text-foreground">Cursor Suave (Desktop)</span>
+                    <p className="text-[11px] text-muted-foreground">
+                      Habilita o cursor com aceleração de GPU e deslize fluido ao digitar no editor.
+                    </p>
+                  </div>
+                  <IosSwitch
+                    checked={policies?.smoothCursor ?? true}
+                    onCheckedChange={(checked) => {
+                      if (!policies) return
+                      setPolicies({ ...policies, smoothCursor: checked })
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Seção Provedores de IA (BYOK) */}

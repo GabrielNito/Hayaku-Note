@@ -6,6 +6,7 @@ import { useEditor, EditorContent, NodeViewWrapper, NodeViewContent, ReactNodeVi
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import Paragraph from "@tiptap/extension-paragraph"
+import Heading from "@tiptap/extension-heading"
 import StarterKit from "@tiptap/starter-kit"
 import Code from "@tiptap/extension-code"
 import { markInputRule } from "@tiptap/core"
@@ -118,6 +119,32 @@ lowlight.registerAlias({
   json: ["jsonc"],
 })
 
+const CustomHeading = Heading.extend({
+  addKeyboardShortcuts() {
+    return {
+      Enter: () => {
+        const { state } = this.editor
+        const { selection } = state
+        const { $from, $to } = selection
+
+        if ($from.parent.type.name === this.name) {
+          // If cursor is at the end of the heading, insert a clean paragraph on the next line
+          if ($from.pos === $to.pos && $from.parentOffset === $from.parent.content.size) {
+            return this.editor
+              .chain()
+              .insertContentAt($from.after(), { type: "paragraph" })
+              .focus($from.after() + 1)
+              .run()
+          }
+          // If splitting within the heading, create a paragraph for the remainder
+          return this.editor.commands.splitBlock({ keepMarks: false })
+        }
+        return false
+      },
+    }
+  },
+})
+
 const CustomParagraph = Paragraph.extend({
   addStorage() {
     return {
@@ -140,12 +167,15 @@ const CustomParagraph = Paragraph.extend({
   },
 })
 
+import { SmoothCursor } from "@/components/smooth-cursor"
+
 interface NoteEditorProps {
   noId: string
   initialContent: string
   caminhoBreadcrumb: { id: string; nome: string }[]
   exigirPinExportar: boolean
   exigirPinUploadImagem: boolean
+  smoothCursor?: boolean
 }
 
 export function NoteEditor({
@@ -154,9 +184,12 @@ export function NoteEditor({
   caminhoBreadcrumb,
   exigirPinExportar,
   exigirPinUploadImagem,
+  smoothCursor = true,
 }: NoteEditorProps) {
   const { toggleSidebar } = useSidebar()
   const isMobile = useIsMobile()
+  const editorContainerRef = React.useRef<HTMLDivElement>(null)
+  const editorContainerChatRef = React.useRef<HTMLDivElement>(null)
   const [isDirty, setIsDirty] = React.useState(false)
   const [lastSavedTime, setLastSavedTime] = React.useState<string | null>(null)
   const [showPinModal, setShowPinModal] = React.useState(false)
@@ -174,6 +207,7 @@ export function NoteEditor({
   const [showUnsavedDialog, setShowUnsavedDialog] = React.useState(false)
   const [pendingNavigationCallback, setPendingNavigationCallback] = React.useState<(() => void) | null>(null)
   const dirtyTimerRef = React.useRef<NodeJS.Timeout | null>(null)
+  const savedSelectionRef = React.useRef<{ from: number; to: number } | null>(null)
 
   React.useEffect(() => {
     return () => {
@@ -209,7 +243,9 @@ export function NoteEditor({
         codeBlock: false,
         paragraph: false,
         code: false,
+        heading: false,
       }),
+      CustomHeading,
       CustomCode,
       CustomParagraph,
       Markdown.configure({
@@ -321,6 +357,10 @@ export function NoteEditor({
 
   const handleTriggerSave = React.useCallback(() => {
     if (!editor) return
+    savedSelectionRef.current = {
+      from: editor.state.selection.from,
+      to: editor.state.selection.to,
+    }
     const mdStorage = editor.storage as { markdown?: { getMarkdown: () => string } }
     const currentMarkdown = mdStorage.markdown?.getMarkdown() || ""
     setPendingSaveContent(currentMarkdown)
@@ -460,6 +500,16 @@ export function NoteEditor({
       now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     )
     setShowPinModal(false)
+
+    if (editor && savedSelectionRef.current) {
+      const { from, to } = savedSelectionRef.current
+      const docSize = editor.state.doc.content.size
+      const safeFrom = Math.min(from, docSize)
+      const safeTo = Math.min(to, docSize)
+      setTimeout(() => {
+        editor.commands.setTextSelection({ from: safeFrom, to: safeTo })
+      }, 50)
+    }
 
     if (pendingNavigationCallback) {
       const cb = pendingNavigationCallback
@@ -739,8 +789,9 @@ export function NoteEditor({
             <ResizablePanel defaultSize={60} minSize={30}>
               <div className="h-full w-full overflow-y-auto overflow-x-hidden relative">
                 <main className="px-3 sm:px-6 py-8 pb-48 flex justify-center min-h-full w-full box-border">
-                  <div className="relative w-full max-w-180 font-sans text-foreground box-border min-w-0">
-                    <EditorContent editor={editor} />
+                  <div ref={editorContainerChatRef} className="relative w-full max-w-180 font-sans text-foreground box-border min-w-0">
+                    <SmoothCursor editor={editor} enabled={smoothCursor} containerRef={editorContainerChatRef} />
+                    <EditorContent editor={editor} className={smoothCursor && !isMobile ? "smooth-cursor-active" : ""} />
                   </div>
                 </main>
               </div>
@@ -768,8 +819,9 @@ export function NoteEditor({
         ) : (
           <div className="h-full w-full overflow-y-auto overflow-x-hidden relative">
             <main className="px-3 sm:px-6 py-8 pb-48 flex justify-center min-h-full w-full box-border">
-              <div className="relative w-full max-w-180 font-sans text-foreground box-border min-w-0">
-                <EditorContent editor={editor} />
+              <div ref={editorContainerRef} className="relative w-full max-w-180 font-sans text-foreground box-border min-w-0">
+                <SmoothCursor editor={editor} enabled={smoothCursor} containerRef={editorContainerRef} />
+                <EditorContent editor={editor} className={smoothCursor && !isMobile ? "smooth-cursor-active" : ""} />
               </div>
             </main>
           </div>
@@ -802,9 +854,13 @@ export function NoteEditor({
         open={showPinModal}
         onOpenChange={(open) => {
           setShowPinModal(open)
-          if (!open) {
+          if (!open && editor && savedSelectionRef.current) {
+            const { from, to } = savedSelectionRef.current
+            const docSize = editor.state.doc.content.size
+            const safeFrom = Math.min(from, docSize)
+            const safeTo = Math.min(to, docSize)
             requestAnimationFrame(() => {
-              editor?.chain().focus().run()
+              editor.commands.setTextSelection({ from: safeFrom, to: safeTo })
             })
           }
         }}

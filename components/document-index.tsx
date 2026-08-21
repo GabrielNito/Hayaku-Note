@@ -22,18 +22,25 @@ interface DocumentIndexProps {
 function extractHeadings(editor: Editor | null): HeadingItem[] {
   if (!editor || editor.isDestroyed) return []
   const items: HeadingItem[] = []
-  editor.state.doc.descendants((node) => {
-    if (node.type.name === "heading") {
-      const level = node.attrs.level as number
-      if (level >= 1 && level <= 3) {
-        items.push({
-          level,
-          text: node.textContent || "Cabeçalho sem título",
-          index: items.length,
-        })
+  try {
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === "heading") {
+        const level = node.attrs.level as number
+        if (level >= 1 && level <= 6) {
+          const text = node.textContent?.trim()
+          if (text) {
+            items.push({
+              level,
+              text,
+              index: items.length,
+            })
+          }
+        }
       }
-    }
-  })
+    })
+  } catch (err) {
+    console.error("Erro ao extrair cabeçalhos:", err)
+  }
   return items
 }
 
@@ -41,12 +48,15 @@ export function DocumentIndex({ editor, isChatOpen }: DocumentIndexProps) {
   const isMobile = useIsMobile()
   const [isOpen, setIsOpen] = React.useState(true)
   const [isHighlighted, setIsHighlighted] = React.useState(false)
-  const [headings, setHeadings] = React.useState<HeadingItem[]>(() => extractHeadings(editor))
+  const [headings, setHeadings] = React.useState<HeadingItem[]>([])
   const [mobileOpen, setMobileOpen] = React.useState(false)
 
-  // Extract headings with debounce whenever editor content updates
+  // Extract headings immediately on mount and whenever editor/document updates
   React.useEffect(() => {
-    if (!editor) return
+    if (!editor || editor.isDestroyed) return
+
+    // Immediate initial extraction
+    setHeadings(extractHeadings(editor))
 
     let timeoutId: NodeJS.Timeout | null = null
 
@@ -55,20 +65,16 @@ export function DocumentIndex({ editor, isChatOpen }: DocumentIndexProps) {
       timeoutId = setTimeout(() => {
         if (!editor || editor.isDestroyed) return
         const items = extractHeadings(editor)
-
-        setHeadings((prev) => {
-          if (prev.length === items.length && prev.every((p, i) => p.level === items[i]?.level && p.text === items[i]?.text)) {
-            return prev
-          }
-          return items
-        })
-      }, 250)
+        setHeadings(items)
+      }, 150)
     }
 
     editor.on("update", updateHeadings)
+    editor.on("selectionUpdate", updateHeadings)
     return () => {
       if (timeoutId) clearTimeout(timeoutId)
       editor.off("update", updateHeadings)
+      editor.off("selectionUpdate", updateHeadings)
     }
   }, [editor])
 

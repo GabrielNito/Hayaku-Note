@@ -55,6 +55,7 @@ export default async function NotePage({ params }: NotePageProps) {
       caminhoBreadcrumb={caminho}
       exigirPinExportar={politicas.exigirPinExportar}
       exigirPinUploadImagem={politicas.exigirPinUploadImagem}
+      smoothCursor={politicas.smoothCursor ?? true}
     />
   )
 }
