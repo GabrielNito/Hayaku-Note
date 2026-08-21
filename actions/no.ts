@@ -21,7 +21,9 @@ function extractUploadThingKeys(content: string | null): string[] {
   return keys
 }
 
-export async function obterArvore(): Promise<NoItem[]> {
+import { cache } from "react"
+
+export const obterArvore = cache(async (): Promise<NoItem[]> => {
   try {
     const todos = await prisma.no.findMany({
       orderBy: [{ nome: "asc" }, { ordem: "asc" }],
@@ -63,9 +65,9 @@ export async function obterArvore(): Promise<NoItem[]> {
     console.error("Erro ao obter arvore:", err)
     return []
   }
-}
+})
 
-export async function obterNo(id: string): Promise<NoItem | null> {
+export const obterNo = cache(async (id: string): Promise<NoItem | null> => {
   try {
     return await prisma.no.findUnique({
       where: { id },
@@ -74,9 +76,9 @@ export async function obterNo(id: string): Promise<NoItem | null> {
     console.error("Erro ao obter no:", err)
     return null
   }
-}
+})
 
-export async function obterPrimeiroArquivo(): Promise<NoItem | null> {
+export const obterPrimeiroArquivo = cache(async (): Promise<NoItem | null> => {
   try {
     return await prisma.no.findFirst({
       where: { tipo: "ARQUIVO" },
@@ -86,9 +88,9 @@ export async function obterPrimeiroArquivo(): Promise<NoItem | null> {
     console.error("Erro ao obter primeiro arquivo:", err)
     return null
   }
-}
+})
 
-export async function obterCaminhoBreadcrumb(id: string): Promise<{ id: string; nome: string }[]> {
+export const obterCaminhoBreadcrumb = cache(async (id: string): Promise<{ id: string; nome: string }[]> => {
   try {
     const caminho: { id: string; nome: string }[] = []
     let atualId: string | null = id
@@ -108,7 +110,7 @@ export async function obterCaminhoBreadcrumb(id: string): Promise<{ id: string; 
     console.error("Erro ao obter caminho:", err)
     return []
   }
-}
+})
 
 export async function criarNo(
   pin: string,

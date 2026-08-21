@@ -310,7 +310,8 @@ export function SettingsDialog() {
 
           {isScanStep && qrCode && (
             <div className="flex flex-col items-center gap-3 rounded-lg border border-border/60 bg-muted/30 p-4">
-              <img src={qrCode} alt="QR Code para Google Authenticator" className="size-44 rounded bg-white p-2" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrCode} alt="QR Code para Google Authenticator" width={176} height={176} className="size-44 rounded bg-white p-2" />
               <p className="max-w-sm text-center text-xs text-muted-foreground">Se não puder escanear, adicione uma chave baseada em tempo e use: <code className="select-all break-all text-foreground">{secret}</code></p>
             </div>
           )}

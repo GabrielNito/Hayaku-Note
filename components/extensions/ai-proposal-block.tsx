@@ -2,14 +2,14 @@
 
 import * as React from "react"
 import { Node, mergeAttributes } from "@tiptap/core"
-import { NodeViewWrapper, ReactNodeViewRenderer, type ReactNodeViewProps } from "@tiptap/react"
+import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from "@tiptap/react"
 import { Check, X, Sparkles, Eye, FileText, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { computeLineDiff } from "@/lib/diff"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 
-function AiProposalComponent({ node, getPos, editor }: ReactNodeViewProps) {
+function AiProposalComponent({ node, getPos, editor }: NodeViewProps) {
   const [showDiff, setShowDiff] = React.useState(false)
 
   const originalContent = (node.attrs.originalContent ?? "") as string
@@ -67,17 +67,6 @@ function AiProposalComponent({ node, getPos, editor }: ReactNodeViewProps) {
       }
     }, 0)
   }, [editor, getPos, node.nodeSize, originalContent])
-
-  // Keybindings listener for when this proposal node is active/focused or visible
-  React.useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        // Optional keyboard shortcut if node is active
-      }
-    }
-    window.addEventListener("keydown", onKeyDown)
-    return () => window.removeEventListener("keydown", onKeyDown)
-  }, [handleAccept, handleReject])
 
   return (
     <NodeViewWrapper className="my-6 rounded-2xl border border-emerald-500/40 bg-emerald-500/5 dark:bg-emerald-950/20 shadow-lg overflow-hidden transition-all duration-300 select-text font-sans relative">

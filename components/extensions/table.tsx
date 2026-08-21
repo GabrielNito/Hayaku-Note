@@ -2,10 +2,9 @@
 
 import * as React from "react"
 import { Node, mergeAttributes, InputRule } from "@tiptap/core"
-import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react"
+import { ReactNodeViewRenderer, NodeViewWrapper, type NodeViewProps } from "@tiptap/react"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
 import { Plus, Trash2, Copy, Check, Table as TableIcon, Code, MoreVertical } from "lucide-react"
 import {
   DropdownMenu,
@@ -21,20 +20,20 @@ function generateTableMarkdown(rowsCount = 3, colsCount = 3): string {
   return serializeMarkdownTable({ headers, rows })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const TableBlockComponent = ({ node, updateAttributes, deleteNode }: { node: any; updateAttributes: (attrs: any) => void; deleteNode: () => void }) => {
+const TableBlockComponent = ({ node, updateAttributes, deleteNode }: NodeViewProps) => {
   const [activeTab, setActiveTab] = React.useState<string>("visual")
   const [copied, setCopied] = React.useState(false)
 
-  const initialMarkdown = node.attrs.markdown || "| Coluna 1 | Coluna 2 |\n|---|---|\n| Valor 1 | Valor 2 |"
-  const [tableData, setTableData] = React.useState<TableData>(() => parseMarkdownTable(initialMarkdown))
-  const [rawMarkdown, setRawMarkdown] = React.useState<string>(initialMarkdown)
+  const currentMarkdown = (node.attrs.markdown as string) || "| Coluna 1 | Coluna 2 |\n|---|---|\n| Valor 1 | Valor 2 |"
+  const [prevMarkdown, setPrevMarkdown] = React.useState(currentMarkdown)
+  const [tableData, setTableData] = React.useState<TableData>(() => parseMarkdownTable(currentMarkdown))
+  const [rawMarkdown, setRawMarkdown] = React.useState<string>(currentMarkdown)
 
-  React.useEffect(() => {
-    const md = node.attrs.markdown || "| Coluna 1 | Coluna 2 |\n|---|---|\n| Valor 1 | Valor 2 |"
-    setTableData(parseMarkdownTable(md))
-    setRawMarkdown(md)
-  }, [node.attrs.markdown])
+  if (currentMarkdown !== prevMarkdown) {
+    setPrevMarkdown(currentMarkdown)
+    setTableData(parseMarkdownTable(currentMarkdown))
+    setRawMarkdown(currentMarkdown)
+  }
 
   const commitTableData = (newData: TableData) => {
     const newMarkdown = serializeMarkdownTable(newData)

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { NodeViewWrapper, NodeViewContent, ReactNodeViewRenderer } from "@tiptap/react"
+import { NodeViewWrapper, NodeViewContent, ReactNodeViewRenderer, type NodeViewProps } from "@tiptap/react"
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight"
 import { Copy, Check, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -18,8 +18,7 @@ const LANGUAGES = [
   { label: "SQL", value: "sql" },
 ]
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CodeBlockComponent = ({ node, updateAttributes }: { node: any; updateAttributes: (attrs: any) => void }) => {
+const CodeBlockComponent = ({ node, updateAttributes }: NodeViewProps) => {
   const [copied, setCopied] = React.useState(false)
   const [isLangOpen, setIsLangOpen] = React.useState(false)
   const menuRef = React.useRef<HTMLDivElement>(null)

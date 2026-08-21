@@ -5,20 +5,22 @@ import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
 import { cn } from "@/lib/utils"
 
+const emptySubscribe = () => () => {}
+
 function ScrollArea({
   className,
   children,
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
-  const [mounted, setMounted] = React.useState(false)
-
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = React.useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  )
 
   if (!mounted) {
     return (
-      <div className={cn("relative overflow-hidden", className)} {...(props as any)}>
+      <div className={cn("relative overflow-hidden", className)}>
         <div className="h-full w-full overflow-auto">{children}</div>
       </div>
     )

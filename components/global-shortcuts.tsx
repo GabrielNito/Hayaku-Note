@@ -1,13 +1,22 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import { useTheme } from "@/components/theme-provider"
-import { QuickOpenDialog } from "@/components/quick-open-dialog"
-import { CommandBarDialog } from "@/components/command-bar-dialog"
 import { NoItem } from "@/actions/types"
 import { PinDialog } from "@/components/pin-dialog"
 import { liberarAcesso } from "@/actions/acesso"
 import { ReadSessionBoundary } from "@/components/read-session-boundary"
+
+const QuickOpenDialog = dynamic(
+  () => import("@/components/quick-open-dialog").then((m) => m.QuickOpenDialog),
+  { ssr: false }
+)
+
+const CommandBarDialog = dynamic(
+  () => import("@/components/command-bar-dialog").then((m) => m.CommandBarDialog),
+  { ssr: false }
+)
 
 interface GlobalShortcutsProps {
   arvore: NoItem[]
@@ -20,6 +29,20 @@ export function GlobalShortcuts({ arvore, exigirPinBusca = false, children }: Gl
   const [quickOpenOpen, setQuickOpenOpen] = React.useState(false)
   const [commandBarOpen, setCommandBarOpen] = React.useState(false)
   const [searchPinOpen, setSearchPinOpen] = React.useState(false)
+
+  const handleOpenSearch = React.useCallback(() => {
+    if (exigirPinBusca) {
+      setSearchPinOpen(true)
+    } else {
+      setQuickOpenOpen(true)
+    }
+    setCommandBarOpen(false)
+  }, [exigirPinBusca])
+
+  const handleOpenCommandBar = React.useCallback(() => {
+    setCommandBarOpen(true)
+    setQuickOpenOpen(false)
+  }, [])
 
   React.useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -39,17 +62,14 @@ export function GlobalShortcuts({ arvore, exigirPinBusca = false, children }: Gl
       if (isMod && e.shiftKey && key === "p") {
         e.preventDefault()
         e.stopPropagation()
-        setCommandBarOpen(true)
-        setQuickOpenOpen(false)
+        handleOpenCommandBar()
         return
       }
 
       if (isMod && !e.shiftKey && key === "p") {
         e.preventDefault()
         e.stopPropagation()
-        if (exigirPinBusca) setSearchPinOpen(true)
-        else setQuickOpenOpen(true)
-        setCommandBarOpen(false)
+        handleOpenSearch()
         return
       }
 
@@ -61,9 +81,19 @@ export function GlobalShortcuts({ arvore, exigirPinBusca = false, children }: Gl
       }
     }
 
+    const handleCustomQuickOpen = () => handleOpenSearch()
+    const handleCustomCommandBar = () => handleOpenCommandBar()
+
     window.addEventListener("keydown", handleKeyDown, { capture: true })
-    return () => window.removeEventListener("keydown", handleKeyDown, { capture: true })
-  }, [resolvedTheme, setTheme, quickOpenOpen, commandBarOpen])
+    window.addEventListener("open-quick-open", handleCustomQuickOpen)
+    window.addEventListener("open-command-bar", handleCustomCommandBar)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown, { capture: true })
+      window.removeEventListener("open-quick-open", handleCustomQuickOpen)
+      window.removeEventListener("open-command-bar", handleCustomCommandBar)
+    }
+  }, [resolvedTheme, setTheme, quickOpenOpen, commandBarOpen, handleOpenSearch, handleOpenCommandBar])
 
   async function confirmarBusca(pin: string) {
     const result = await liberarAcesso(pin, ["search"])
@@ -76,16 +106,20 @@ export function GlobalShortcuts({ arvore, exigirPinBusca = false, children }: Gl
     <>
       <ReadSessionBoundary />
       {children}
-      <QuickOpenDialog
-        open={quickOpenOpen}
-        onOpenChange={setQuickOpenOpen}
-        arvore={arvore}
-      />
-      <CommandBarDialog
-        open={commandBarOpen}
-        onOpenChange={setCommandBarOpen}
-        arvore={arvore}
-      />
+      {quickOpenOpen && (
+        <QuickOpenDialog
+          open={quickOpenOpen}
+          onOpenChange={setQuickOpenOpen}
+          arvore={arvore}
+        />
+      )}
+      {commandBarOpen && (
+        <CommandBarDialog
+          open={commandBarOpen}
+          onOpenChange={setCommandBarOpen}
+          arvore={arvore}
+        />
+      )}
       <PinDialog open={searchPinOpen} onOpenChange={setSearchPinOpen} onSuccess={confirmarBusca} title="PIN para buscar" description="Digite o PIN para usar a busca de notas." />
     </>
   )

@@ -1,6 +1,6 @@
 "use client"
 
-import { NodeViewWrapper, ReactNodeViewRenderer } from "@tiptap/react"
+import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from "@tiptap/react"
 import Image from "@tiptap/extension-image"
 import React, { useState, useRef, useCallback } from "react"
 
@@ -8,13 +8,7 @@ const ImageComponent = ({
   node,
   updateAttributes,
   selected,
-}: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  node: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  updateAttributes: (attrs: any) => void
-  selected: boolean
-}) => {
+}: NodeViewProps) => {
   const [isResizing, setIsResizing] = useState(false)
   const imgRef = useRef<HTMLImageElement>(null)
 
@@ -51,6 +45,7 @@ const ImageComponent = ({
           selected || isResizing ? "ring-2 ring-primary rounded-md" : ""
         }`}
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           ref={imgRef}
           src={node.attrs.src}

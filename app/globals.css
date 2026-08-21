@@ -120,14 +120,17 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground overflow-x-hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
   }
   html {
     @apply font-sans overflow-x-hidden;
+    -webkit-text-size-adjust: 100%;
   }
 }
 
