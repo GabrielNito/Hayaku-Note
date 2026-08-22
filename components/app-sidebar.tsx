@@ -253,11 +253,25 @@ function NoTreeNode({ item, activeId }: { item: NoItem; activeId?: string }) {
 
     setShowPinModal(false)
     setPendingActionData(null)
+
+    if (pendingActionData.action === "deletar") {
+      const currentPath = typeof window !== "undefined" ? window.location.pathname : ""
+      const deletedIds = res && "deletedIds" in res && Array.isArray(res.deletedIds) ? res.deletedIds : [item.id]
+      const isCurrentDeleted = deletedIds.some((deletedId) => currentPath === `/n/${deletedId}` || currentPath.startsWith(`/n/${deletedId}`))
+
+      if (isCurrentDeleted) {
+        if (typeof window !== "undefined") {
+          window.__checkUnsavedChangesBeforeNav = undefined
+        }
+        router.push("/")
+        router.refresh()
+        return
+      }
+    }
+
     router.refresh()
 
-    if (pendingActionData.action === "deletar" && isActive) {
-      navigateWith(router, "/")
-    } else if (res && "id" in res && res.id && pendingActionData.action === "criarArquivo") {
+    if (res && "id" in res && res.id && pendingActionData.action === "criarArquivo") {
       navigateWith(router, `/n/${res.id}`)
     }
   }

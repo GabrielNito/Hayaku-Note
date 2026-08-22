@@ -183,13 +183,14 @@ export async function renomearNo(
 export async function deletarNo(
   pin: string,
   id: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; deletedIds?: string[] }> {
   const isValid = await validarPin(pin)
   if (!isValid) {
     return { success: false, error: "PIN incorreto." }
   }
 
   try {
+    const deletedIds: string[] = [id]
     const no = await prisma.no.findUnique({
       where: { id },
       select: { conteudo: true },
@@ -210,6 +211,7 @@ export async function deletarNo(
         select: { id: true, conteudo: true },
       })
       for (const filho of filhos) {
+        deletedIds.push(filho.id)
         if (filho.conteudo) {
           const keys = extractUploadThingKeys(filho.conteudo)
           if (keys.length > 0) {
@@ -227,7 +229,7 @@ export async function deletarNo(
     })
 
     revalidatePath("/")
-    return { success: true }
+    return { success: true, deletedIds }
   } catch (err) {
     console.error("Erro ao deletar no:", err)
     return { success: false, error: "Erro ao deletar no banco de dados." }
@@ -276,7 +278,7 @@ export async function salvarConteudo(
 export async function executarComandoCli(
   pin: string,
   commandLine: string
-): Promise<{ success: boolean; error?: string; id?: string; tipo?: string; deletedId?: string }> {
+): Promise<{ success: boolean; error?: string; id?: string; tipo?: string; deletedId?: string; deletedIds?: string[] }> {
   const isValid = await validarPin(pin)
   if (!isValid) {
     return { success: false, error: "PIN incorreto." }
@@ -471,6 +473,7 @@ export async function executarComandoCli(
       }
 
       if (targetNode) {
+        const deletedIds: string[] = [targetNode.id]
         // Delete recursively including associated files in UploadThing
         async function deletarArquivosRecursivos(noId: string) {
           const no = await prisma.no.findUnique({
@@ -488,6 +491,7 @@ export async function executarComandoCli(
             select: { id: true },
           })
           for (const filho of filhos) {
+            deletedIds.push(filho.id)
             await deletarArquivosRecursivos(filho.id)
           }
         }
@@ -498,7 +502,7 @@ export async function executarComandoCli(
         })
 
         revalidatePath("/")
-        return { success: true, deletedId: targetNode.id }
+        return { success: true, deletedId: targetNode.id, deletedIds }
       }
       return { success: false, error: "Nó não encontrado para remoção." }
     }

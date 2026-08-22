@@ -185,14 +185,25 @@ export function CommandBarDialog({ open, onOpenChange, arvore }: CommandBarDialo
     }
 
     onOpenChange(false)
+
+    if (res.deletedId || res.deletedIds) {
+      const currentPath = typeof window !== "undefined" ? window.location.pathname : ""
+      const deletedList: string[] = res.deletedIds || (res.deletedId ? [res.deletedId] : [])
+      const isCurrentDeleted = deletedList.some((id: string) => currentPath === `/n/${id}` || currentPath.startsWith(`/n/${id}`))
+
+      if (isCurrentDeleted) {
+        if (typeof window !== "undefined") {
+          window.__checkUnsavedChangesBeforeNav = undefined
+        }
+        router.push("/")
+        router.refresh()
+        return
+      }
+    }
+
     router.refresh()
     if (res.id && res.tipo === "ARQUIVO") {
       navigateWith(router, `/n/${res.id}`)
-    } else if (res.deletedId) {
-      const currentPath = window.location.pathname
-      if (currentPath.includes(`/n/${res.deletedId}`)) {
-        navigateWith(router, "/")
-      }
     }
   }
 
