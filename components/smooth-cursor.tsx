@@ -23,6 +23,12 @@ export function SmoothCursor({ editor, enabled = true, containerRef }: SmoothCur
       return
     }
 
+    // Do not show smooth cursor if editor is not actively focused
+    if (!editor.isFocused) {
+      setIsVisible(false)
+      return
+    }
+
     try {
       const { selection } = editor.state
       // Only render smooth cursor if selection is collapsed (not dragging a highlight range)
@@ -40,7 +46,7 @@ export function SmoothCursor({ editor, enabled = true, containerRef }: SmoothCur
       const y = coords.top - containerRect.top
       const height = Math.max(coords.bottom - coords.top, 18)
 
-      // Ensure valid numbers
+      // Ensure valid numbers and within reasonable bounds
       if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(height)) {
         setPos({ x, y, height })
         setIsVisible(true)
@@ -50,6 +56,8 @@ export function SmoothCursor({ editor, enabled = true, containerRef }: SmoothCur
         idleTimerRef.current = setTimeout(() => {
           setIsTyping(false)
         }, 500)
+      } else {
+        setIsVisible(false)
       }
     } catch {
       setIsVisible(false)
@@ -58,8 +66,6 @@ export function SmoothCursor({ editor, enabled = true, containerRef }: SmoothCur
 
   React.useEffect(() => {
     if (!editor || !enabled || isMobile) return
-
-    updateCursorPosition()
 
     const handleUpdate = () => {
       requestAnimationFrame(updateCursorPosition)
@@ -72,10 +78,9 @@ export function SmoothCursor({ editor, enabled = true, containerRef }: SmoothCur
       setIsVisible(false)
     })
 
-    const container = containerRef.current
-    if (container) {
-      container.addEventListener("scroll", handleUpdate, { passive: true })
-    }
+    // Find the scrollable ancestor container
+    const scrollParent = containerRef.current?.closest(".overflow-y-auto") || window
+    scrollParent.addEventListener("scroll", handleUpdate, { passive: true })
     window.addEventListener("resize", handleUpdate, { passive: true })
 
     return () => {
@@ -83,9 +88,7 @@ export function SmoothCursor({ editor, enabled = true, containerRef }: SmoothCur
       editor.off("selectionUpdate", handleUpdate)
       editor.off("update", handleUpdate)
       editor.off("focus", handleUpdate)
-      if (container) {
-        container.removeEventListener("scroll", handleUpdate)
-      }
+      scrollParent.removeEventListener("scroll", handleUpdate)
       window.removeEventListener("resize", handleUpdate)
     }
   }, [editor, enabled, isMobile, updateCursorPosition, containerRef])
@@ -95,14 +98,18 @@ export function SmoothCursor({ editor, enabled = true, containerRef }: SmoothCur
   return (
     <div
       aria-hidden="true"
-      className={`pointer-events-none absolute left-0 top-0 z-20 w-[2px] rounded-full bg-primary will-change-transform ${
-        !isTyping ? "animate-ios-pulse-soft" : ""
-      }`}
+      className="pointer-events-none absolute left-0 top-0 z-20 will-change-transform"
       style={{
         transform: `translate3d(${pos.x}px, ${pos.y}px, 0)`,
         height: `${pos.height}px`,
         transition: "transform 75ms cubic-bezier(0.2, 0.9, 0.4, 1), height 75ms ease",
       }}
-    />
+    >
+      <div
+        className={`w-[2px] h-full rounded-full bg-primary ${
+          !isTyping ? "animate-cursor-blink" : "opacity-100"
+        }`}
+      />
+    </div>
   )
 }

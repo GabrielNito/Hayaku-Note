@@ -339,6 +339,15 @@ html.dark.theme-catppuccin {
   animation: ios-pulse-soft 2.5s ease-in-out infinite;
 }
 
+@keyframes ios-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-cursor-blink {
+  animation: ios-cursor-blink 1s ease-in-out infinite;
+}
+
 .ios-spring {
   transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
